@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Center,
+  Space,
   Stack,
   Text,
   Textarea,
@@ -17,23 +18,21 @@ function Landing() {
   );
 
   return (
-    <Center>
-      <Stack maw="720px" align="center" gap="48px">
-        <Stack justify="center" ta="center" gap="16px">
-          <Title order={1} c="gray.9">
-            Your solution building companion
-          </Title>
-          <Text size="lg" c="gray.7">
-            Let's start with the general solution you're looking at.
-          </Text>
-        </Stack>
-        <Stack w="100%">
-          <Textarea
-            variant="filled"
-            placeholder="What do you wish to build?"
-            rightSection={rightArrowActionButton}
-          />
-        </Stack>
+    <Center h="100%">
+      <Stack maw="720px" justify="center" ta="center" gap="16px">
+        <Title order={1} c="gray.9">
+          Your solution building companion
+        </Title>
+        <Text size="lg" c="gray.7">
+          Let's start with the general solution you're looking at.
+        </Text>
+        <Space h="16px" />
+        <Textarea
+          variant="filled"
+          autosize
+          placeholder="What do you wish to build?"
+          rightSection={rightArrowActionButton}
+        />
       </Stack>
     </Center>
   );

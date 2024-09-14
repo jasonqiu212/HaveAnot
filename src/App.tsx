@@ -8,13 +8,13 @@ import Landing from './pages/Landing';
 function App() {
   return (
     <MantineProvider>
-      <AppShell header={{ height: 128 }} padding="40px">
+      <AppShell header={{ height: 128 }}>
         <AppShell.Header p="40px">
           <a href=".">
             <img src={logo} className="logo" alt="Logo" />
           </a>
         </AppShell.Header>
-        <AppShell.Main w="100%">
+        <AppShell.Main h="calc(100vh - 128px)" w="100%">
           <Landing />
         </AppShell.Main>
       </AppShell>
