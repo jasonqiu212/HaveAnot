@@ -12,7 +12,7 @@ import { IconArrowNarrowRight } from '@tabler/icons-react';
 
 function Landing() {
   const rightArrowActionButton = (
-    <ActionIcon variant="light" color="gray.4">
+    <ActionIcon variant="subtle" c="indigo.6">
       <IconArrowNarrowRight />
     </ActionIcon>
   );
