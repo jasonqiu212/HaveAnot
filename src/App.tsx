@@ -3,6 +3,7 @@ import '@mantine/core/styles.css';
 
 import './App.css';
 import logo from './assets/logo.svg';
+import Landing from './pages/Landing';
 
 function App() {
   return (
@@ -13,7 +14,9 @@ function App() {
             <img src={logo} className="logo" alt="Logo" />
           </a>
         </AppShell.Header>
-        <AppShell.Main>Main</AppShell.Main>
+        <AppShell.Main w="100%">
+          <Landing />
+        </AppShell.Main>
       </AppShell>
     </MantineProvider>
   );

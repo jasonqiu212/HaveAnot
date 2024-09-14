@@ -1,3 +1,7 @@
+#root {
+  width: 100%;
+}
+
 .logo {
   will-change: filter;
   transition: filter 300ms;
