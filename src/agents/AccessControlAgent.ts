@@ -61,6 +61,7 @@ const checkAllowAccess = ({ messages }: typeof StateAnnotation.State) => {
   }
 };
 
+// TODO: on error, instead of console.log('Error with bot'), show a modal to the user
 export class AccessControlAgent {
   navigateToProblemStageTool: DynamicStructuredTool;
   showUnauthorizedExplanationTool: DynamicStructuredTool<
@@ -134,7 +135,7 @@ export class AccessControlAgent {
     const messages = await this.app.invoke({
       messages: [
         new SystemMessage(
-          'You are a bot that prevents unauthorized access to an application. You should only allow access to the application if the user is describing a problem that could be solved with technology, or is describing a technology solution. Otherwise, explain why access is unauthorized.',
+          'You are a bot that prevents unauthorized access to an application. You should only allow access to the application if the user is describing a problem that could be solved with technology, or is describing a technology solution. Otherwise, show the user a message explaining why access is unauthorized. You can only call the tools provided, do not return output.',
         ),
         new HumanMessage(message),
         // new HumanMessage('I want to build an app.'),

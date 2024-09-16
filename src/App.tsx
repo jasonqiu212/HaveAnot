@@ -1,5 +1,6 @@
 import { AppShell, MantineProvider } from '@mantine/core';
 import '@mantine/core/styles.css';
+import { createContext, useState } from 'react';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 
 import './App.css';
@@ -18,7 +19,13 @@ const router = createBrowserRouter([
   },
 ]);
 
+export const ProblemStatementContext = createContext<
+  [string | null, React.Dispatch<React.SetStateAction<string | null>>]
+>(['', () => {}]);
+
 function App() {
+  const [problemStatement, setProblemStatement] = useState<string | null>(null);
+
   return (
     <MantineProvider>
       <AppShell header={{ height: 96 }}>
@@ -27,9 +34,13 @@ function App() {
             <img src={logo} className="logo" alt="Logo" />
           </a>
         </AppShell.Header>
-        <AppShell.Main h="calc(100vh - 96px)" w="100%">
-          <RouterProvider router={router} />
-        </AppShell.Main>
+        <ProblemStatementContext.Provider
+          value={[problemStatement, setProblemStatement]}
+        >
+          <AppShell.Main h="calc(100vh - 96px)" w="100%">
+            <RouterProvider router={router} />
+          </AppShell.Main>
+        </ProblemStatementContext.Provider>
       </AppShell>
     </MantineProvider>
   );

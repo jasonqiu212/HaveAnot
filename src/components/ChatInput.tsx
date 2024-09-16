@@ -10,9 +10,10 @@ import {
 import '@mantine/core/styles.css';
 import { useDisclosure } from '@mantine/hooks';
 import { IconArrowNarrowRight } from '@tabler/icons-react';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { ProblemStatementContext } from '../App';
 import { AccessControlAgent } from '../agents/AccessControlAgent';
 
 interface ChatInputProps {
@@ -29,6 +30,7 @@ function ChatInput({ placeholder, backgroundColor }: ChatInputProps) {
   const [accessControlAgentMessage, setAccessControlAgentMessage] =
     useState('');
   const navigate = useNavigate();
+  const [_, setProblemStatement] = useContext(ProblemStatementContext);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(event.target.value);
@@ -40,10 +42,10 @@ function ChatInput({ placeholder, backgroundColor }: ChatInputProps) {
     setModalOpen();
   };
 
-  const accessControlAgent = new AccessControlAgent(
-    () => navigate('chatbot'),
-    showAccessControlAgentMessage,
-  );
+  const accessControlAgent = new AccessControlAgent(() => {
+    setProblemStatement(inputValue);
+    navigate('chatbot');
+  }, showAccessControlAgentMessage);
 
   const handleSubmit = () => {
     accessControlAgent.invoke(inputValue);
