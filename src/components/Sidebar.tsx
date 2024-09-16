@@ -37,7 +37,7 @@ function Sidebar() {
       onStepClick={setActive}
       allowNextStepsSelect={false}
       h="100%"
-      w="50%"
+      w="40%"
       p="40px"
       size="sm"
       color="indigo.6"
