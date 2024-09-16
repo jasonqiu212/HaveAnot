@@ -1,9 +1,22 @@
 import { AppShell, MantineProvider } from '@mantine/core';
 import '@mantine/core/styles.css';
+import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 
 import './App.css';
 import logo from './assets/logo.svg';
 import Landing from './pages/Landing';
+import Problem from './pages/Problem';
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Landing />,
+  },
+  {
+    path: '/problem',
+    element: <Problem />,
+  },
+]);
 
 function App() {
   return (
@@ -15,7 +28,7 @@ function App() {
           </a>
         </AppShell.Header>
         <AppShell.Main h="calc(100vh - 96px)" w="100%">
-          <Landing />
+          <RouterProvider router={router} />
         </AppShell.Main>
       </AppShell>
     </MantineProvider>
