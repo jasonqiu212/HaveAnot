@@ -1,14 +1,52 @@
-import { Stack, Text, Title } from '@mantine/core';
+import { Stepper } from '@mantine/core';
 import '@mantine/core/styles.css';
+import { useState } from 'react';
+
+import RecommendedProducts from './RecommendedProducts';
+import SolutionRequirements from './SolutionRequirements';
 
 function Sidebar() {
+  const [active, setActive] = useState(0);
+
+  const previousStep = () =>
+    setActive((current) => (current > 0 ? current - 1 : current));
+  const nextStep = () =>
+    setActive((current) => (current < steps.length ? current + 1 : current));
+
+  const steps = [
+    {
+      label: 'Solution requirements',
+      element: <SolutionRequirements nextStep={nextStep} />,
+    },
+    {
+      label: 'Recommended products',
+      element: (
+        <RecommendedProducts previousStep={previousStep} nextStep={nextStep} />
+      ),
+    },
+    // TODO: Add solution architecture step
+    // {
+    //   label: 'Solution architecture',
+    //   element: <SolutionRequirements nextStep={nextStep} />,
+    // },
+  ];
+
   return (
-    <Stack h="100%" w="30%" p="40px" justify="flex-start" gap="16px" c="gray.9">
-      <Title order={3}>Here's what we think your solution requires.</Title>
-      <Text size="md" c="gray.7">
-        This will inform the products we will suggest next.
-      </Text>
-    </Stack>
+    <Stepper
+      active={active}
+      onStepClick={setActive}
+      allowNextStepsSelect={false}
+      h="100%"
+      w="50%"
+      p="40px"
+      size="sm"
+      color="indigo.6"
+      styles={{ content: { paddingTop: '40px' } }}
+    >
+      {steps.map((step) => (
+        <Stepper.Step label={step.label}>{step.element}</Stepper.Step>
+      ))}
+    </Stepper>
   );
 }
 
