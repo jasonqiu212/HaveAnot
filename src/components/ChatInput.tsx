@@ -6,9 +6,14 @@ import { useState } from 'react';
 interface ChatInputProps {
   placeholder?: string;
   backgroundColor?: string;
+  handleButtonClick: () => void;
 }
 
-function ChatInput({ placeholder, backgroundColor }: ChatInputProps) {
+function ChatInput({
+  placeholder,
+  backgroundColor,
+  handleButtonClick,
+}: ChatInputProps) {
   const [inputValue, setInputValue] = useState('');
 
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -36,6 +41,10 @@ function ChatInput({ placeholder, backgroundColor }: ChatInputProps) {
       />
       <ActionIcon
         disabled={inputValue ? false : true}
+        onClick={() => {
+          setInputValue('');
+          handleButtonClick();
+        }}
         variant="filled"
         size="sm"
         c="gray.4"
