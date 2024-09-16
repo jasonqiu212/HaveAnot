@@ -41,7 +41,7 @@ function ChatInput({ placeholder, backgroundColor }: ChatInputProps) {
   };
 
   const accessControlAgent = new AccessControlAgent(
-    () => navigate('problem'),
+    () => navigate('chatbot'),
     showAccessControlAgentMessage,
   );
 

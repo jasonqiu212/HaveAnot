@@ -4,11 +4,7 @@ import '@mantine/core/styles.css';
 import ChatInput from '../components/ChatInput';
 import Sidebar from '../components/Sidebar';
 
-function Problem() {
-  const handleInputButtonClick = () => {
-    // TODO: Pass user's input to chatbot
-  };
-
+function Chatbot() {
   return (
     <Group h="100%">
       <Stack h="100%" p="40px" bg="gray.0" style={{ flexGrow: 1 }}>
@@ -16,7 +12,6 @@ function Problem() {
         <ChatInput
           placeholder="Share more details about the problem you wish to solve"
           backgroundColor="white"
-          handleButtonClick={handleInputButtonClick}
         />
       </Stack>
       <Sidebar />
@@ -24,4 +19,4 @@ function Problem() {
   );
 }
 
-export default Problem;
+export default Chatbot;
