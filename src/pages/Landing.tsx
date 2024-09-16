@@ -1,22 +1,9 @@
-import {
-  ActionIcon,
-  Button,
-  Center,
-  Stack,
-  Text,
-  Textarea,
-  Title,
-} from '@mantine/core';
+import { Button, Center, Stack, Text, Title } from '@mantine/core';
 import '@mantine/core/styles.css';
-import { IconArrowNarrowRight } from '@tabler/icons-react';
+
+import ChatInput from '../components/ChatInput';
 
 function Landing() {
-  const rightArrowActionButton = (
-    <ActionIcon variant="filled" c="gray.4" bg="gray.1">
-      <IconArrowNarrowRight />
-    </ActionIcon>
-  );
-
   return (
     <Center h="100%">
       <Stack gap="40px">
@@ -30,13 +17,9 @@ function Landing() {
           </Text>
         </Stack>
         <Stack align="center" gap="24px">
-          <Textarea
-            variant="filled"
-            w="100%"
-            autosize
-            maxRows={9}
+          <ChatInput
             placeholder="You can start by providing some context to your problem."
-            rightSection={rightArrowActionButton}
+            backgroundColor="gray.0"
           />
           <Button variant="light" c="indigo.6" fw="400" bg="indigo.0">
             I have a solution in mind
