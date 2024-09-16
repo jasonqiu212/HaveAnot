@@ -1,6 +1,7 @@
 import { ActionIcon, Group, Textarea } from '@mantine/core';
 import '@mantine/core/styles.css';
 import { IconArrowNarrowRight } from '@tabler/icons-react';
+import { useState } from 'react';
 
 interface ChatInputProps {
   placeholder?: string;
@@ -8,6 +9,12 @@ interface ChatInputProps {
 }
 
 function ChatInput({ placeholder, backgroundColor }: ChatInputProps) {
+  const [inputValue, setInputValue] = useState('');
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputValue(event.target.value);
+  };
+
   return (
     <Group
       w="100%"
@@ -19,13 +26,21 @@ function ChatInput({ placeholder, backgroundColor }: ChatInputProps) {
       style={{ borderRadius: '4px' }}
     >
       <Textarea
+        value={inputValue}
+        onChange={handleInputChange}
         style={{ flexGrow: 1 }}
         variant="unstyled"
         autosize
         maxRows={9}
         placeholder={placeholder}
       />
-      <ActionIcon variant="filled" size="sm" c="gray.4" bg="gray.1">
+      <ActionIcon
+        disabled={inputValue ? false : true}
+        variant="filled"
+        size="sm"
+        c="gray.4"
+        bg={inputValue ? 'indigo.6' : 'gray.1'}
+      >
         <IconArrowNarrowRight />
       </ActionIcon>
     </Group>
