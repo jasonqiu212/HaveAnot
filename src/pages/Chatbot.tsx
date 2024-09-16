@@ -4,7 +4,7 @@ import '@mantine/core/styles.css';
 import ChatInput from '../components/ChatInput';
 import Sidebar from '../components/Sidebar';
 
-function Problem() {
+function Chatbot() {
   const handleInputButtonClick = () => {
     // TODO: Pass user's input to chatbot
   };
@@ -24,4 +24,4 @@ function Problem() {
   );
 }
 
-export default Problem;
+export default Chatbot;

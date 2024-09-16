@@ -9,7 +9,7 @@ function Landing() {
 
   const handleInputButtonClick = () => {
     // TODO: Pass user's input to next page
-    navigate('problem');
+    navigate('/chatbot');
   };
 
   return (

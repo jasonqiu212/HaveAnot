@@ -4,8 +4,8 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 
 import './App.css';
 import logo from './assets/logo.svg';
+import Chatbot from './pages/Chatbot';
 import Landing from './pages/Landing';
-import Problem from './pages/Problem';
 
 const router = createBrowserRouter([
   {
@@ -13,8 +13,8 @@ const router = createBrowserRouter([
     element: <Landing />,
   },
   {
-    path: '/problem',
-    element: <Problem />,
+    path: '/chatbot',
+    element: <Chatbot />,
   },
 ]);
 
