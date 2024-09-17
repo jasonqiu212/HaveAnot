@@ -43,8 +43,10 @@ function Sidebar() {
       color="indigo.6"
       styles={{ content: { paddingTop: '40px' } }}
     >
-      {steps.map((step) => (
-        <Stepper.Step label={step.label}>{step.element}</Stepper.Step>
+      {steps.map((step, index) => (
+        <Stepper.Step key={index} label={step.label}>
+          {step.element}
+        </Stepper.Step>
       ))}
     </Stepper>
   );
