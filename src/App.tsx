@@ -24,7 +24,9 @@ export const ProblemStatementContext = createContext<
 >(['', () => {}]);
 
 function App() {
-  const [problemStatement, setProblemStatement] = useState<string | null>(null);
+  const [problemStatement, setProblemStatement] = useState<string | null>(
+    "A concrete, specific problem statement that does not include the problem's solutions.",
+  );
 
   return (
     <MantineProvider>
