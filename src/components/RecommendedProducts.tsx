@@ -34,7 +34,7 @@ const products: { [key: string]: Product } = {
 };
 
 function RecommendedProducts({
-  nextStep,
+  //   nextStep,
   previousStep,
 }: RecommendedProductsProps) {
   const recommendedProducts = ['GatherSG', 'Postman'];
