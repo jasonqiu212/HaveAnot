@@ -1,13 +1,14 @@
-import { ActionIcon, Group, Textarea } from '@mantine/core';
+import { ActionIcon, Group, Loader, Textarea } from '@mantine/core';
 import '@mantine/core/styles.css';
 import { IconArrowNarrowRight } from '@tabler/icons-react';
 
 interface ChatInputProps {
-  placeholder?: string;
-  backgroundColor?: string;
+  placeholder: string;
+  backgroundColor: string;
   handleSubmit: () => void;
   inputValue: string;
   setInputValue: (value: string) => void;
+  isLoadingOpened: boolean;
 }
 
 function ChatInput({
@@ -16,6 +17,7 @@ function ChatInput({
   handleSubmit,
   inputValue,
   setInputValue,
+  isLoadingOpened,
 }: ChatInputProps) {
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(event.target.value);
@@ -47,18 +49,22 @@ function ChatInput({
             }
           }}
         />
-        <ActionIcon
-          disabled={inputValue ? false : true}
-          onClick={() => {
-            handleSubmit();
-          }}
-          variant="filled"
-          size="sm"
-          c="gray.4"
-          bg={inputValue ? 'indigo.6' : 'gray.1'}
-        >
-          <IconArrowNarrowRight />
-        </ActionIcon>
+        {isLoadingOpened ? (
+          <Loader />
+        ) : (
+          <ActionIcon
+            disabled={inputValue ? false : true}
+            onClick={() => {
+              handleSubmit();
+            }}
+            variant="filled"
+            size="sm"
+            c="gray.4"
+            bg={inputValue ? 'indigo.6' : 'gray.1'}
+          >
+            <IconArrowNarrowRight />
+          </ActionIcon>
+        )}
       </Group>
     </>
   );

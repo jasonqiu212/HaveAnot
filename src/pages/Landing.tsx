@@ -2,7 +2,6 @@ import {
   Alert,
   Button,
   Center,
-  LoadingOverlay,
   Modal,
   Stack,
   Text,
@@ -68,6 +67,7 @@ function Landing() {
               handleSubmit={handleSubmit}
               inputValue={inputValue}
               setInputValue={setInputValue}
+              isLoadingOpened={isLoadingOpened}
             />
             <Button variant="light" c="indigo.6" fw="400" bg="indigo.0">
               I have a solution in mind
@@ -86,7 +86,6 @@ function Landing() {
       >
         <Alert color="red">{accessControlAgentMessage}</Alert>
       </Modal>
-      <LoadingOverlay visible={isLoadingOpened} />
     </>
   );
 }
