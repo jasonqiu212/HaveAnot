@@ -24,6 +24,29 @@ function SolutionRequirements({ nextStep }: SolutionRequirementsProps) {
     </Paper>
   );
 
+  const notEnoughInformationWithHow = (
+    <Paper p="24px" bg="blue.0" c="gray.7">
+      <Stack gap="16px">
+        <Text fs="italic" c="gray.7">
+          We don't have enough information yet! Try elaborating on your problem
+          to get the best results.
+        </Text>
+        <Button fw="400" c="white" bg="indigo.6">
+          How?
+        </Button>
+      </Stack>
+    </Paper>
+  );
+
+  const notEnoughInformation = (
+    <Paper p="24px" bg="gray.0" c="gray.7">
+      <Text fs="italic" c="gray.7">
+        We don't have enough information yet! Try elaborating on your problem to
+        get the best results.
+      </Text>
+    </Paper>
+  );
+
   return (
     <Stack justify="flex-start" gap="16px" c="gray.9">
       <Title order={3}>Here's what we think your solution requires.</Title>
@@ -31,13 +54,9 @@ function SolutionRequirements({ nextStep }: SolutionRequirementsProps) {
         This will inform the products we will suggest next.
       </Text>
       {solutionRequirements}
-      <Button
-        variant="light"
-        fw="400"
-        c="white"
-        bg="indigo.6"
-        onClick={nextStep}
-      >
+      {notEnoughInformationWithHow}
+      {notEnoughInformation}
+      <Button fw="400" c="white" bg="indigo.6" onClick={nextStep}>
         See products
       </Button>
     </Stack>
