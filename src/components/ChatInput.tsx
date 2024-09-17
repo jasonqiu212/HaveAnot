@@ -1,55 +1,24 @@
-import {
-  ActionIcon,
-  Alert,
-  Group,
-  LoadingOverlay,
-  Modal,
-  Text,
-  Textarea,
-} from '@mantine/core';
+import { ActionIcon, Group, Textarea } from '@mantine/core';
 import '@mantine/core/styles.css';
-import { useDisclosure } from '@mantine/hooks';
 import { IconArrowNarrowRight } from '@tabler/icons-react';
-import { useContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-
-import { ProblemStatementContext } from '../App';
-import { AccessControlAgent } from '../agents/AccessControlAgent';
 
 interface ChatInputProps {
   placeholder?: string;
   backgroundColor?: string;
+  handleSubmit: () => void;
+  inputValue: string;
+  setInputValue: (value: string) => void;
 }
 
-function ChatInput({ placeholder, backgroundColor }: ChatInputProps) {
-  const [inputValue, setInputValue] = useState('');
-  const [isModalOpened, { open: setModalOpen, close: setModalClose }] =
-    useDisclosure(false);
-  const [isLoadingOpened, { open: setLoadingOpen, close: setLoadingClose }] =
-    useDisclosure(false);
-  const [accessControlAgentMessage, setAccessControlAgentMessage] =
-    useState('');
-  const navigate = useNavigate();
-  const [_, setProblemStatement] = useContext(ProblemStatementContext);
-
+function ChatInput({
+  placeholder,
+  backgroundColor,
+  handleSubmit,
+  inputValue,
+  setInputValue,
+}: ChatInputProps) {
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(event.target.value);
-  };
-
-  const showAccessControlAgentMessage = (message: string) => {
-    setAccessControlAgentMessage(message);
-    setLoadingClose();
-    setModalOpen();
-  };
-
-  const accessControlAgent = new AccessControlAgent(() => {
-    setProblemStatement(inputValue);
-    navigate('chatbot');
-  }, showAccessControlAgentMessage);
-
-  const handleSubmit = () => {
-    accessControlAgent.invoke(inputValue);
-    setLoadingOpen();
   };
 
   return (
@@ -91,18 +60,6 @@ function ChatInput({ placeholder, backgroundColor }: ChatInputProps) {
           <IconArrowNarrowRight />
         </ActionIcon>
       </Group>
-      <Modal
-        centered
-        onClose={() => {
-          setInputValue('');
-          setModalClose();
-        }}
-        opened={isModalOpened}
-        title={<Text fw="bold">Unauthorised</Text>}
-      >
-        <Alert color="red">{accessControlAgentMessage}</Alert>
-      </Modal>
-      <LoadingOverlay visible={isLoadingOpened} />
     </>
   );
 }
