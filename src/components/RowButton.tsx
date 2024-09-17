@@ -1,4 +1,4 @@
-import { Group, Text, ThemeIcon, UnstyledButton } from '@mantine/core';
+import { Group, Text, UnstyledButton } from '@mantine/core';
 import '@mantine/core/styles.css';
 import { IconChevronRight } from '@tabler/icons-react';
 
