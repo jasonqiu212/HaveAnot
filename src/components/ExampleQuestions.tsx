@@ -17,7 +17,7 @@ function ExampleQuestions() {
       <Title order={3} c="indigo.6">
         Try answering these questions
       </Title>
-      <Stack>
+      <Stack gap="0px">
         {exampleQuestions.map((exampleQuestion: string, index: number) => (
           <RowButton
             key={index}
