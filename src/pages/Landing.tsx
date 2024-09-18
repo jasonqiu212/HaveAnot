@@ -61,19 +61,14 @@ function Landing() {
               solve.
             </Text>
           </Stack>
-          <Stack align="center" gap="24px">
-            <ChatInput
-              placeholder="You can start by providing some context to your problem."
-              backgroundColor="gray.0"
-              handleSubmit={handleSubmit}
-              inputValue={inputValue}
-              setInputValue={setInputValue}
-              isLoadingOpened={isLoadingOpened}
-            />
-            <Button variant="light" c="indigo.6" fw="400" bg="indigo.0">
-              I have a solution in mind
-            </Button>
-          </Stack>
+          <ChatInput
+            placeholder="You can start by providing some context to your problem."
+            backgroundColor="gray.0"
+            handleSubmit={handleSubmit}
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            isLoadingOpened={isLoadingOpened}
+          />
         </Stack>
       </Center>
       <Modal
