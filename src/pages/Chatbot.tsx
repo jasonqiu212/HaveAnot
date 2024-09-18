@@ -40,10 +40,10 @@ function Chatbot() {
   >(undefined, 20);
   const [inputValue, setInputValue] = useState('');
   const [isLoadingAgentResponse, setIsLoadingAgentResponse] = useState(false);
-  const [
-    areExampleQuestionsShowed,
-    { open: showExampleQuestions, close: closeExampleQuestions },
-  ] = useDisclosure(false);
+  //   const [
+  //     areExampleQuestionsShowed,
+  //     { open: showExampleQuestions, close: closeExampleQuestions },
+  //   ] = useDisclosure(false);
 
   const addMessage = (message: Message) => {
     setStreamedMessage(message);
@@ -132,7 +132,7 @@ function Chatbot() {
         <Stack w="59%" h="100%" p="40px" bg="gray.0" px="sm" align="center">
           <ChatHistory messages={messages} />
           <Box w="87%">
-            <Transition
+            {/* <Transition
               mounted={areExampleQuestionsShowed}
               transition="fade-up"
               duration={600}
@@ -143,7 +143,7 @@ function Chatbot() {
                   <ExampleQuestions handleCloseClick={closeExampleQuestions} />
                 </div>
               )}
-            </Transition>
+            </Transition> */}
             <ChatInput
               placeholder="Share more details about the problem you wish to solve"
               backgroundColor="white"
@@ -155,8 +155,6 @@ function Chatbot() {
           </Box>
         </Stack>
         <Sidebar
-          areExampleQuestionsShowed={areExampleQuestionsShowed}
-          showExampleQuestions={showExampleQuestions}
           solutionRequirements={solutionRequirements}
           solutionExplanation={solutionExplanation}
         />

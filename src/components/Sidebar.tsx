@@ -6,17 +6,10 @@ import RecommendedProducts from './RecommendedProducts';
 import SolutionRequirements from './SolutionRequirements';
 
 interface SidebarProps {
-  areExampleQuestionsShowed: boolean;
-  showExampleQuestions: () => void;
   solutionRequirements: string[] | undefined;
   solutionExplanation: string | undefined;
 }
-function Sidebar({
-  areExampleQuestionsShowed,
-  showExampleQuestions,
-  solutionRequirements,
-  solutionExplanation,
-}: SidebarProps) {
+function Sidebar({ solutionRequirements, solutionExplanation }: SidebarProps) {
   const [active, setActive] = useState(0);
 
   const previousStep = () =>
@@ -30,8 +23,6 @@ function Sidebar({
       element: (
         <SolutionRequirements
           nextStep={nextStep}
-          areExampleQuestionsShowed={areExampleQuestionsShowed}
-          showExampleQuestions={showExampleQuestions}
           solutionRequirementsList={solutionRequirements}
           solutionExplanation={solutionExplanation}
         />

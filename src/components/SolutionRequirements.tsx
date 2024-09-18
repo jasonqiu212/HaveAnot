@@ -3,16 +3,12 @@ import '@mantine/core/styles.css';
 
 interface SolutionRequirementsProps {
   nextStep: () => void;
-  areExampleQuestionsShowed: boolean;
-  showExampleQuestions: () => void;
   solutionRequirementsList: string[] | undefined;
   solutionExplanation: string | undefined;
 }
 
 function SolutionRequirements({
   nextStep,
-  areExampleQuestionsShowed,
-  showExampleQuestions,
   solutionRequirementsList,
   solutionExplanation,
 }: SolutionRequirementsProps) {
@@ -31,19 +27,7 @@ function SolutionRequirements({
       </Stack>
     ) : undefined;
 
-  const notEnoughInformation = !areExampleQuestionsShowed ? (
-    <Paper p="24px" bg="blue.0" c="gray.7">
-      <Stack gap="16px">
-        <Text fs="italic" c="gray.7">
-          We don't have enough information yet! Try elaborating on your problem
-          to get the best results.
-        </Text>
-        <Button fw="400" c="white" bg="indigo.6" onClick={showExampleQuestions}>
-          How?
-        </Button>
-      </Stack>
-    </Paper>
-  ) : (
+  const notEnoughInformation = (
     <Paper p="24px" bg="gray.0" c="gray.7">
       <Text fs="italic" c="gray.7">
         We don't have enough information yet! Try elaborating on your problem to
