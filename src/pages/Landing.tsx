@@ -13,7 +13,7 @@ import { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ProblemStatementContext } from '../App';
-import { AccessControlAgent } from '../agents/AccessControlAgent';
+// import { AccessControlAgent } from '../agents/AccessControlAgent';
 import ChatInput from '../components/ChatInput';
 
 function Landing() {
@@ -21,14 +21,13 @@ function Landing() {
 
   const [_, setProblemStatement] = useContext(ProblemStatementContext);
 
-  const [isModalOpened, { open: setModalOpen, close: setModalClose }] =
-    useDisclosure(false);
-  const [isLoadingOpened, { open: setLoadingOpen, close: setLoadingClose }] =
-    useDisclosure(false);
+  const [isModalOpened, { close: setModalClose }] = useDisclosure(false);
+  const [isLoadingOpened, { open: setLoadingOpen }] = useDisclosure(false);
 
   const [inputValue, setInputValue] = useState('');
-  const [accessControlAgentMessage, setAccessControlAgentMessage] =
-    useState('');
+  const accessControlAgentMessage = '';
+  //   const [accessControlAgentMessage, setAccessControlAgentMessage] =
+  //     useState('');
 
   // const accessControlAgent = new AccessControlAgent(
   //   () => {
