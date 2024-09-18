@@ -1,14 +1,6 @@
-import {
-  Alert,
-  Box,
-  Group,
-  Modal,
-  Stack,
-  Text,
-  Transition,
-} from '@mantine/core';
+import { Alert, Box, Group, Modal, Stack, Text } from '@mantine/core';
 import '@mantine/core/styles.css';
-import { useDisclosure, useThrottledState } from '@mantine/hooks';
+import { useThrottledState } from '@mantine/hooks';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,7 +8,6 @@ import { ProblemStatementContext } from '../App';
 import { ProblemStatementAgent } from '../agents/ProblemStatementAgent';
 import ChatHistory from '../components/ChatHistory';
 import ChatInput from '../components/ChatInput';
-import ExampleQuestions from '../components/ExampleQuestions';
 import Sidebar from '../components/Sidebar';
 
 export interface Message {

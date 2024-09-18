@@ -1,12 +1,4 @@
-import {
-  Alert,
-  Button,
-  Center,
-  Modal,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Alert, Center, Modal, Stack, Text, Title } from '@mantine/core';
 import '@mantine/core/styles.css';
 import { useDisclosure } from '@mantine/hooks';
 import { useContext, useState } from 'react';
