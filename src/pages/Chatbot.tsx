@@ -1,6 +1,14 @@
-import { Alert, Box, Group, Modal, Stack, Text } from '@mantine/core';
+import {
+  Alert,
+  Box,
+  Group,
+  Modal,
+  Stack,
+  Text,
+  Transition,
+} from '@mantine/core';
 import '@mantine/core/styles.css';
-import { useThrottledState } from '@mantine/hooks';
+import { useDisclosure, useThrottledState } from '@mantine/hooks';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -32,7 +40,10 @@ function Chatbot() {
   >(undefined, 20);
   const [inputValue, setInputValue] = useState('');
   const [isLoadingAgentResponse, setIsLoadingAgentResponse] = useState(false);
-  const [isHowButtonClicked, setIsHowButtonClicked] = useState(false);
+  const [
+    areExampleQuestionsShowed,
+    { open: showExampleQuestions, close: closeExampleQuestions },
+  ] = useDisclosure(false);
 
   const addMessage = (message: Message) => {
     setStreamedMessage(message);
@@ -121,7 +132,18 @@ function Chatbot() {
         <Stack w="59%" h="100%" p="40px" bg="gray.0" px="sm" align="center">
           <ChatHistory messages={messages} />
           <Box w="87%">
-            {isHowButtonClicked && <ExampleQuestions />}
+            <Transition
+              mounted={areExampleQuestionsShowed}
+              transition="fade-up"
+              duration={600}
+              timingFunction="ease"
+            >
+              {(styles) => (
+                <div style={styles}>
+                  <ExampleQuestions handleCloseClick={closeExampleQuestions} />
+                </div>
+              )}
+            </Transition>
             <ChatInput
               placeholder="Share more details about the problem you wish to solve"
               backgroundColor="white"
@@ -133,8 +155,8 @@ function Chatbot() {
           </Box>
         </Stack>
         <Sidebar
-          isHowButtonClicked={isHowButtonClicked}
-          setIsHowButtonClicked={setIsHowButtonClicked}
+          areExampleQuestionsShowed={areExampleQuestionsShowed}
+          showExampleQuestions={showExampleQuestions}
           solutionRequirements={solutionRequirements}
           solutionExplanation={solutionExplanation}
         />

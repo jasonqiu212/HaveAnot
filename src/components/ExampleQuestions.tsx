@@ -1,7 +1,12 @@
-import { Stack, Title } from '@mantine/core';
+import { ActionIcon, Group, Stack, Title } from '@mantine/core';
 import '@mantine/core/styles.css';
+import { IconX } from '@tabler/icons-react';
 
 import RowButton from './RowButton';
+
+interface ExampleQuestionsProps {
+  handleCloseClick: () => void;
+}
 
 const exampleQuestions = [
   'Who is affected by this problem?',
@@ -11,12 +16,17 @@ const exampleQuestions = [
   'Why is the problem worth solving?',
 ];
 
-function ExampleQuestions() {
+function ExampleQuestions({ handleCloseClick }: ExampleQuestionsProps) {
   return (
     <Stack gap="20px" w="100%" py="40px">
-      <Title order={3} c="indigo.6">
-        Try answering these questions
-      </Title>
+      <Group>
+        <Title order={3} c="indigo.6" style={{ flexGrow: 1 }}>
+          Try answering these questions
+        </Title>
+        <ActionIcon variant="transparent" c="gray.8" onClick={handleCloseClick}>
+          <IconX width="16px" />
+        </ActionIcon>
+      </Group>
       <Stack gap="0px">
         {exampleQuestions.map((exampleQuestion: string, index: number) => (
           <RowButton

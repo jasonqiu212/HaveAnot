@@ -6,14 +6,14 @@ import RecommendedProducts from './RecommendedProducts';
 import SolutionRequirements from './SolutionRequirements';
 
 interface SidebarProps {
-  isHowButtonClicked: boolean;
-  setIsHowButtonClicked: (value: boolean) => void;
+  areExampleQuestionsShowed: boolean;
+  showExampleQuestions: () => void;
   solutionRequirements: string[] | undefined;
   solutionExplanation: string | undefined;
 }
 function Sidebar({
-  isHowButtonClicked,
-  setIsHowButtonClicked,
+  areExampleQuestionsShowed,
+  showExampleQuestions,
   solutionRequirements,
   solutionExplanation,
 }: SidebarProps) {
@@ -30,8 +30,8 @@ function Sidebar({
       element: (
         <SolutionRequirements
           nextStep={nextStep}
-          isHowButtonClicked={isHowButtonClicked}
-          setIsHowButtonClicked={setIsHowButtonClicked}
+          areExampleQuestionsShowed={areExampleQuestionsShowed}
+          showExampleQuestions={showExampleQuestions}
           solutionRequirementsList={solutionRequirements}
           solutionExplanation={solutionExplanation}
         />

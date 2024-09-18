@@ -3,16 +3,16 @@ import '@mantine/core/styles.css';
 
 interface SolutionRequirementsProps {
   nextStep: () => void;
-  isHowButtonClicked: boolean;
-  setIsHowButtonClicked: (value: boolean) => void;
+  areExampleQuestionsShowed: boolean;
+  showExampleQuestions: () => void;
   solutionRequirementsList: string[] | undefined;
   solutionExplanation: string | undefined;
 }
 
 function SolutionRequirements({
   nextStep,
-  isHowButtonClicked,
-  setIsHowButtonClicked,
+  areExampleQuestionsShowed,
+  showExampleQuestions,
   solutionRequirementsList,
   solutionExplanation,
 }: SolutionRequirementsProps) {
@@ -20,41 +20,25 @@ function SolutionRequirements({
     solutionRequirementsList !== undefined &&
     solutionExplanation !== undefined ? (
       <Stack p="24px" bg="gray.0" c="gray.7" gap="32px">
-        <Text>
-          {solutionExplanation}
-          {/* It sounds like you need a case management system that is able to do
-          the following: */}
-        </Text>
+        <Text>{solutionExplanation}</Text>
         <List type="ordered">
           {solutionRequirementsList.map(
             (requirement: string, index: number) => (
               <List.Item key={index}>{requirement}</List.Item>
             ),
           )}
-          {/* <List.Item>Allow partner organizations to input data.</List.Item>
-        <List.Item>Update data entries in real time.</List.Item>
-        <List.Item>Consolidate and organize data.</List.Item>
-        <List.Item>View live updates.</List.Item>
-        <List.Item>Send notifications to users.</List.Item>
-        <List.Item>Grant admin control rights.</List.Item>
-        <List.Item>Ensure data security.</List.Item> */}
         </List>
       </Stack>
     ) : undefined;
 
-  const notEnoughInformation = !isHowButtonClicked ? (
+  const notEnoughInformation = !areExampleQuestionsShowed ? (
     <Paper p="24px" bg="blue.0" c="gray.7">
       <Stack gap="16px">
         <Text fs="italic" c="gray.7">
           We don't have enough information yet! Try elaborating on your problem
           to get the best results.
         </Text>
-        <Button
-          fw="400"
-          c="white"
-          bg="indigo.6"
-          onClick={() => setIsHowButtonClicked(true)}
-        >
+        <Button fw="400" c="white" bg="indigo.6" onClick={showExampleQuestions}>
           How?
         </Button>
       </Stack>
