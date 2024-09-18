@@ -5,7 +5,18 @@ import { useState } from 'react';
 import RecommendedProducts from './RecommendedProducts';
 import SolutionRequirements from './SolutionRequirements';
 
-function Sidebar() {
+interface SidebarProps {
+  isHowButtonClicked: boolean;
+  setIsHowButtonClicked: (value: boolean) => void;
+  solutionRequirements: string[] | undefined;
+  solutionExplanation: string | undefined;
+}
+function Sidebar({
+  isHowButtonClicked,
+  setIsHowButtonClicked,
+  solutionRequirements,
+  solutionExplanation,
+}: SidebarProps) {
   const [active, setActive] = useState(0);
 
   const previousStep = () =>
@@ -16,7 +27,15 @@ function Sidebar() {
   const steps = [
     {
       label: 'Solution requirements',
-      element: <SolutionRequirements nextStep={nextStep} />,
+      element: (
+        <SolutionRequirements
+          nextStep={nextStep}
+          isHowButtonClicked={isHowButtonClicked}
+          setIsHowButtonClicked={setIsHowButtonClicked}
+          solutionRequirementsList={solutionRequirements}
+          solutionExplanation={solutionExplanation}
+        />
+      ),
     },
     {
       label: 'Recommended products',

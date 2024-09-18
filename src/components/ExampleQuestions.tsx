@@ -13,7 +13,7 @@ const exampleQuestions = [
 
 function ExampleQuestions() {
   return (
-    <Stack gap="20px">
+    <Stack gap="20px" w="100%" py="40px">
       <Title order={3} c="indigo.6">
         Try answering these questions
       </Title>

@@ -15,7 +15,7 @@ import {
   StateGraph,
 } from '@langchain/langgraph/web';
 import { AzureChatOpenAI, ChatOpenAICallOptions } from '@langchain/openai';
-import { ZodObject, ZodString, ZodTypeAny, z } from 'zod';
+import { z } from 'zod';
 
 import { Message } from '../pages/Chatbot';
 
@@ -61,9 +61,9 @@ const checkIfUpdatingProblem = ({ messages }: typeof StateAnnotation.State) => {
 
   if (lastMessage.tool_calls?.length ?? 0 > 0) {
     switch (lastMessage.tool_calls?.[0].name ?? '') {
-      case 'updateProblemTool': {
-        console.log('updating problem statement');
-        return 'updateProblem';
+      case 'showSolutionRequirementsTool': {
+        console.log('showing solution requirement');
+        return 'showSolutionRequirements';
       }
       default: {
         console.log("tools don't match the given tools, showing answer");
@@ -90,15 +90,7 @@ export class ProblemStatementAgent {
 
   // need to ensure agent proactively tries to help write an example problem statement if taking too many prompts
 
-  updateProblemTool: DynamicStructuredTool<
-    ZodObject<
-      { problem: ZodString },
-      'strip',
-      ZodTypeAny,
-      { problem: string },
-      { problem: string }
-    >
-  >;
+  showSolutionRequirementsTool: DynamicStructuredTool<any>;
   tools: DynamicStructuredTool<any>[];
   showAnswer: (state: typeof StateAnnotation.State) => Promise<any>;
   model: Runnable<
@@ -114,22 +106,31 @@ export class ProblemStatementAgent {
   memory: MemorySaver;
 
   constructor(
-    updateProblemCallback: (problem: string) => void,
+    showSolutionRequirementsCallback: (
+      explanation: string,
+      solution: string[],
+    ) => void,
     showAnswerCallback: (message: Message) => void,
   ) {
-    this.updateProblemTool = tool(
-      ({ problem }) => updateProblemCallback(problem),
+    this.showSolutionRequirementsTool = tool(
+      ({ explanation, requirements }) =>
+        showSolutionRequirementsCallback(explanation, requirements),
       {
-        name: 'updateProblemTool',
-        description: 'Set or update the problem statement',
+        name: 'showSolutionRequirementsTool',
+        description: 'Show the requirements of the solution',
         schema: z.object({
-          problem: z
+          explanation: z
             .string()
-            .describe('A description of the problem statement'),
+            .describe(
+              'An explanation of the solution required and its requirements',
+            ),
+          requirements: z
+            .array(z.string())
+            .describe('A list of around 5-7 requirements for the solution'),
         }),
       },
     );
-    this.tools = [this.updateProblemTool];
+    this.tools = [this.showSolutionRequirementsTool];
 
     this.showAnswer = async (state: typeof StateAnnotation.State) => {
       console.log('in show answer');
@@ -175,11 +176,14 @@ export class ProblemStatementAgent {
 
     const langgraph = new StateGraph(StateAnnotation)
       .addNode('agent', (state) => getModelResponse(this.model, state))
-      .addNode('updateProblem', new ToolNode([this.updateProblemTool]))
+      .addNode(
+        'showSolutionRequirements',
+        new ToolNode([this.showSolutionRequirementsTool]),
+      )
       .addNode('showAnswer', this.showAnswer)
       .addEdge('__start__', 'agent')
       .addConditionalEdges('agent', checkIfUpdatingProblem)
-      .addEdge('updateProblem', 'showAnswer')
+      .addEdge('showSolutionRequirements', 'showAnswer')
       .addEdge('showAnswer', 'agent');
 
     this.memory = new MemorySaver();
@@ -199,14 +203,14 @@ export class ProblemStatementAgent {
         messages: [
           new SystemMessage(
             `Role: You are an expert at crafting problem statements. 
-            Task: Determine if the user's problem statement is detailed enough. If it is, call the tool to update the problem statement. 
+            Task: Determine if the user's problem statement is detailed enough. If it is, call the tool to summarise what the requirements of a solution for the overall problem statement. 
             Do not give a suggestion of the updated problem statement, unless the user is unable to improve on the problem statement after 3 prompts.
             Output: You must always return an textual explanation in your response, and the problem statement based on the current context you have, without any improvements.,
 
             Examples:
             User: 60% of Singaporeans lack the knowledge of what can be recycled when disposing their trash. This results in them choosing not to recycle because of the additional effort required for research, resulting in low recycling rates.
             Expert: Good! This is a detailed and specific problem statement that mentions a specific statistic of 60% and a specific nationality is part of the problem. It is clear what the problem is, who it affects, and why it is a problem.
-            Expert: Tool call to update problem statement.
+            Expert: Tool call to summarise requirements of the solution.
             `,
           ),
         ],

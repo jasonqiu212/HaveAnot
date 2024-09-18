@@ -8,6 +8,7 @@ import { ProblemStatementContext } from '../App';
 import { ProblemStatementAgent } from '../agents/ProblemStatementAgent';
 import ChatHistory from '../components/ChatHistory';
 import ChatInput from '../components/ChatInput';
+import ExampleQuestions from '../components/ExampleQuestions';
 import Sidebar from '../components/Sidebar';
 
 export interface Message {
@@ -16,9 +17,13 @@ export interface Message {
 }
 
 function Chatbot() {
-  const [problemStatement, setProblemStatement] = useContext(
-    ProblemStatementContext,
-  );
+  const [problemStatement, _] = useContext(ProblemStatementContext);
+  const [solutionExplanation, setSolutionExplanation] = useState<
+    string | undefined
+  >();
+  const [solutionRequirements, setSolutionRequirements] = useState<
+    string[] | undefined
+  >();
   const navigate = useNavigate();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -27,6 +32,7 @@ function Chatbot() {
   >(undefined, 20);
   const [inputValue, setInputValue] = useState('');
   const [isLoadingAgentResponse, setIsLoadingAgentResponse] = useState(false);
+  const [isHowButtonClicked, setIsHowButtonClicked] = useState(false);
 
   const addMessage = (message: Message) => {
     setStreamedMessage(message);
@@ -34,9 +40,9 @@ function Chatbot() {
 
   const problemStatementAgent = useMemo(
     () =>
-      new ProblemStatementAgent((statement) => {
-        console.log(statement);
-        setProblemStatement(statement);
+      new ProblemStatementAgent((explanation, requirements) => {
+        setSolutionExplanation(explanation);
+        setSolutionRequirements(requirements);
       }, addMessage),
     [],
   );
@@ -111,10 +117,11 @@ function Chatbot() {
     );
   } else {
     return (
-      <Group h="100%">
-        <Stack w="60%" h="100%" p="40px" bg="gray.0" px="sm" align="center">
+      <Group h="100%" wrap="nowrap">
+        <Stack w="59%" h="100%" p="40px" bg="gray.0" px="sm" align="center">
           <ChatHistory messages={messages} />
           <Box w="87%">
+            {isHowButtonClicked && <ExampleQuestions />}
             <ChatInput
               placeholder="Share more details about the problem you wish to solve"
               backgroundColor="white"
@@ -125,7 +132,12 @@ function Chatbot() {
             />
           </Box>
         </Stack>
-        <Sidebar />
+        <Sidebar
+          isHowButtonClicked={isHowButtonClicked}
+          setIsHowButtonClicked={setIsHowButtonClicked}
+          solutionRequirements={solutionRequirements}
+          solutionExplanation={solutionExplanation}
+        />
       </Group>
     );
   }
