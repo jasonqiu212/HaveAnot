@@ -47,6 +47,7 @@ function ChatHistory({ messages }: ChatHistoryProps) {
             }}
             p="24px"
             wrap="nowrap"
+            align="flex-start"
           >
             {message.role === 'AI' && (
               <Avatar
