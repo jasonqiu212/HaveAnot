@@ -30,20 +30,22 @@ function Landing() {
   const [accessControlAgentMessage, setAccessControlAgentMessage] =
     useState('');
 
-  const accessControlAgent = new AccessControlAgent(
-    () => {
-      setProblemStatement(inputValue);
-      navigate('chatbot');
-    },
-    (message) => {
-      setLoadingClose();
-      setAccessControlAgentMessage(message);
-      setModalOpen();
-    },
-  );
+  // const accessControlAgent = new AccessControlAgent(
+  //   () => {
+  //     setProblemStatement(inputValue);
+  //     navigate('chatbot');
+  //   },
+  //   (message) => {
+  //     setLoadingClose();
+  //     setAccessControlAgentMessage(message);
+  //     setModalOpen();
+  //   },
+  // );
 
   const handleSubmit = () => {
-    accessControlAgent.invoke(inputValue);
+    // accessControlAgent.invoke(inputValue);
+    setProblemStatement(inputValue);
+    navigate('chatbot');
     setLoadingOpen();
   };
 
