@@ -33,7 +33,7 @@ function ChatHistory({ messages }: ChatHistoryProps) {
       w="100%"
       viewportRef={viewport}
     >
-      <Stack w="100%" px="40px">
+      <Stack w="100%" gap="24px">
         {messages.map((message, index) => (
           <Group
             key={index}
@@ -45,7 +45,7 @@ function ChatHistory({ messages }: ChatHistoryProps) {
                   ? 'var(--mantine-color-gray-1)'
                   : 'transparent',
             }}
-            p="24px"
+            p={message.role === 'Human' ? '24px' : '0px'}
             wrap="nowrap"
             align="flex-start"
           >

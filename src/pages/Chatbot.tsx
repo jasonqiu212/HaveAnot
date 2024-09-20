@@ -120,30 +120,16 @@ function Chatbot() {
   } else {
     return (
       <Group h="100%" wrap="nowrap">
-        <Stack w="59%" h="100%" p="40px" bg="gray.0" px="sm" align="center">
+        <Stack w="59%" h="100%" p="40px" bg="gray.0" align="center">
           <ChatHistory messages={messages} />
-          <Box w="87%">
-            {/* <Transition
-              mounted={areExampleQuestionsShowed}
-              transition="fade-up"
-              duration={600}
-              timingFunction="ease"
-            >
-              {(styles) => (
-                <div style={styles}>
-                  <ExampleQuestions handleCloseClick={closeExampleQuestions} />
-                </div>
-              )}
-            </Transition> */}
-            <ChatInput
-              placeholder="Share more details about the problem you wish to solve"
-              backgroundColor="white"
-              handleSubmit={handleSubmit}
-              inputValue={inputValue}
-              setInputValue={setInputValue}
-              isLoadingOpened={isLoadingAgentResponse}
-            />
-          </Box>
+          <ChatInput
+            placeholder="Share more details about the problem you wish to solve"
+            backgroundColor="white"
+            handleSubmit={handleSubmit}
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            isLoadingOpened={isLoadingAgentResponse}
+          />
         </Stack>
         <Sidebar
           solutionRequirements={solutionRequirements}
