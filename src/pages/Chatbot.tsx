@@ -1,4 +1,4 @@
-import { Alert, Box, Group, Modal, Stack, Text } from '@mantine/core';
+import { Alert, Group, Modal, Stack, Text } from '@mantine/core';
 import '@mantine/core/styles.css';
 import { useThrottledState } from '@mantine/hooks';
 import { useContext, useEffect, useMemo, useState } from 'react';

@@ -1,4 +1,4 @@
-import { List, Paper, Stack, Text } from '@mantine/core';
+import { List, Stack, Text } from '@mantine/core';
 import '@mantine/core/styles.css';
 
 interface SolutionRequirementsProps {
