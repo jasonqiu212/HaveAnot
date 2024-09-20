@@ -16,7 +16,7 @@ function ProductCard({
   websiteLink,
 }: ProductCardProps) {
   return (
-    <Paper p="24px" bg="gray.0">
+    <Paper p="24px" bg="indigo.0" radius="md">
       <Stack gap="16px">
         <a href={websiteLink} target="_blank">
           <Group>

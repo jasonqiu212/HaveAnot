@@ -8,7 +8,7 @@ import { ProblemStatementContext } from '../App';
 import { ProblemStatementAgent } from '../agents/ProblemStatementAgent';
 import ChatHistory from '../components/ChatHistory';
 import ChatInput from '../components/ChatInput';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../components/sidebar/Sidebar';
 
 export interface Message {
   role: 'Human' | 'AI';
