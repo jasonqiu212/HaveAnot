@@ -8,7 +8,7 @@ interface ChatInputProps {
   handleSubmit: () => void;
   inputValue: string;
   setInputValue: (value: string) => void;
-  isLoadingOpened: boolean;
+  isLoading: boolean;
 }
 
 function ChatInput({
@@ -17,7 +17,7 @@ function ChatInput({
   handleSubmit,
   inputValue,
   setInputValue,
-  isLoadingOpened,
+  isLoading,
 }: ChatInputProps) {
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(event.target.value);
@@ -49,7 +49,7 @@ function ChatInput({
             }
           }}
         />
-        {isLoadingOpened ? (
+        {isLoading ? (
           <Loader />
         ) : (
           <ActionIcon

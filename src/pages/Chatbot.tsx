@@ -5,7 +5,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ProblemStatementContext } from '../App';
-import { ProblemStatementAgent } from '../agents/ProblemStatementAgent';
+import { HaveAnotLanggraph } from '../Langgraph';
 import ChatHistory from '../components/ChatHistory';
 import ChatInput from '../components/ChatInput';
 import Sidebar from '../components/sidebar/Sidebar';
@@ -16,89 +16,168 @@ export interface Message {
 }
 
 function Chatbot() {
-  const [problemStatement, _] = useContext(ProblemStatementContext);
-  const [solutionExplanation, setSolutionExplanation] = useState<
-    string | undefined
-  >();
-  const [solutionRequirements, setSolutionRequirements] = useState<
-    string[] | undefined
-  >();
   const navigate = useNavigate();
+  const [initProblemStatement, _] = useContext(ProblemStatementContext);
 
+  // streamedMessage, streamedProblem, streamedFeatures, streamedProducts are set by HaveAnotLanggraph
+  // useEffect is used to then stream their values into messages, problem, features, products respectively
   const [messages, setMessages] = useState<Message[]>([]);
   const [streamedMessage, setStreamedMessage] = useThrottledState<
-    Message | undefined
+    string | undefined
   >(undefined, 20);
+  const [streamingMessageInterval, setStreamingMessageInterval] = useState<
+    NodeJS.Timeout | undefined
+  >();
+  const [problem, setProblem] = useState<string | undefined>();
+  const [streamedProblem, setStreamedProblem] = useThrottledState<
+    string | undefined
+  >(undefined, 20);
+  const [streamingProblemInterval, setStreamingProblemInterval] = useState<
+    NodeJS.Timeout | undefined
+  >();
+  const [features, setFeatures] = useState<string | undefined>();
+  const [streamedFeatures, setStreamedFeatures] = useThrottledState<
+    string | undefined
+  >(undefined, 20);
+  // todo: this needs to be a list of products
+  const [products, setProducts] = useState<string | undefined>();
+  const [streamedProducts, setStreamedProducts] = useThrottledState<
+    string | undefined
+  >(undefined, 20);
+
   const [inputValue, setInputValue] = useState('');
-  const [isLoadingAgentResponse, setIsLoadingAgentResponse] = useState(false);
+  const [isLoadingAgentResponseMap, setIsLoadingAgentResponseMap] = useState({
+    chat: false,
+    problem: false,
+    features: false,
+    products: false,
+  });
 
-  const addMessage = (message: Message) => {
-    setStreamedMessage(message);
+  const getReactStateForGraph = () => {
+    return {
+      problem: streamedProblem !== undefined ? streamedProblem : problem,
+      features: streamedFeatures !== undefined ? streamedFeatures : features,
+      products: streamedProducts !== undefined ? streamedProducts : products,
+    };
   };
-
-  const problemStatementAgent = useMemo(
+  const graph = useMemo(
     () =>
-      new ProblemStatementAgent((explanation, requirements) => {
-        setSolutionExplanation(explanation);
-        setSolutionRequirements(requirements);
-      }, addMessage),
+      new HaveAnotLanggraph(
+        getReactStateForGraph,
+        setStreamedMessage,
+        setStreamedProblem,
+        setStreamedFeatures,
+        setStreamedProducts,
+      ),
     [],
   );
 
-  const handleSubmit = (message: string = inputValue) => {
-    if (!isLoadingAgentResponse) {
+  const handleSubmit = async (message: string = inputValue) => {
+    if (
+      Object.values(isLoadingAgentResponseMap).every((value) => value === false)
+    ) {
       setInputValue('');
-      setIsLoadingAgentResponse(true);
+      setIsLoadingAgentResponseMap({
+        chat: true,
+        problem: true,
+        features: true,
+        products: true,
+      });
       setMessages((prevMessages) => [
         ...prevMessages,
         { role: 'Human', text: message },
       ]);
-      (async () => {
-        // so somehow awaiting the stream is necessary, else nothing happens
-        for await (const _ of await problemStatementAgent.stream(message)) {
-          // console.log(chunk);
-        }
-      })();
+      // currently only supports one thread
+      await graph.invoke(message, { configurable: { thread_id: 1 } });
     }
   };
 
+  // submits the problem statement (set in the context from homepage) as the first message from the user
   useEffect(() => {
-    if (problemStatement !== null) {
-      handleSubmit(problemStatement);
+    if (initProblemStatement !== null) {
+      handleSubmit(initProblemStatement);
     }
   }, []);
 
-  // gives the effect that the messages are being streamed in
+  // gives the effect that chat messages are being streamed in
   useEffect(() => {
     if (streamedMessage === undefined) {
       return;
     }
 
+    if (streamingMessageInterval) {
+      clearInterval(streamingMessageInterval);
+      setStreamingMessageInterval(undefined);
+      setMessages((prevMessages) =>
+        prevMessages.slice(0, prevMessages.length - 1),
+      );
+    }
     let i = 0;
     setMessages((prevMessages) => [
       ...prevMessages,
-      { role: streamedMessage.role, text: '' },
+      { role: 'AI', text: '' } as Message,
     ]);
     const interval = setInterval(() => {
-      if (i < streamedMessage.text.length) {
+      if (i < streamedMessage.length) {
         setMessages((prevMessages) => {
           const messages = [...prevMessages];
           messages[messages.length - 1] = {
-            role: streamedMessage.role,
-            text: streamedMessage.text.slice(0, i + 1),
+            role: 'AI',
+            text: streamedMessage.slice(0, i + 1),
           };
           return messages;
         });
         i++;
       } else {
         clearInterval(interval);
+        setStreamingMessageInterval(undefined);
         setStreamedMessage(undefined);
-        setIsLoadingAgentResponse(false);
+        setIsLoadingAgentResponseMap({
+          ...isLoadingAgentResponseMap,
+          chat: false,
+        });
       }
-    });
+    }, 10);
+    setStreamingMessageInterval(interval);
   }, [streamedMessage]);
 
-  if (problemStatement === null) {
+  // gives the effect that problem in sidebar is being streamed in
+  useEffect(() => {
+    if (streamedProblem === undefined) {
+      return;
+    }
+
+    if (streamingProblemInterval) {
+      clearInterval(streamingProblemInterval);
+      setStreamingProblemInterval(undefined);
+    }
+    setProblem('');
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < streamedProblem.length) {
+        setProblem(streamedProblem.slice(0, i + 1));
+        i++;
+      } else {
+        clearInterval(interval);
+        setStreamingProblemInterval(undefined);
+        setStreamedProblem(undefined);
+        setIsLoadingAgentResponseMap({
+          ...isLoadingAgentResponseMap,
+          problem: false,
+        });
+        // NOTE: temporarily set all agents to have responded, since we have not implemented the problem, features, products agents
+        setIsLoadingAgentResponseMap({
+          chat: false,
+          problem: false,
+          features: false,
+          products: false,
+        });
+      }
+    }, 10);
+    setStreamingProblemInterval(interval);
+  }, [streamedProblem]);
+
+  if (initProblemStatement === null) {
     return (
       <Modal
         centered
@@ -124,12 +203,13 @@ function Chatbot() {
             handleSubmit={handleSubmit}
             inputValue={inputValue}
             setInputValue={setInputValue}
-            isLoadingOpened={isLoadingAgentResponse}
+            isLoading={isLoadingAgentResponseMap.chat}
           />
         </Stack>
         <Sidebar
-          solutionRequirements={solutionRequirements}
-          solutionExplanation={solutionExplanation}
+          problem={problem}
+          solutionRequirements={[]}
+          solutionExplanation={features}
         />
       </Group>
     );

@@ -9,11 +9,16 @@ import RecommendedProducts from './RecommendedProducts';
 import SolutionRequirements from './SolutionRequirements';
 
 interface SidebarProps {
+  problem: string | undefined;
   solutionRequirements: string[] | undefined;
   solutionExplanation: string | undefined;
 }
 
-function Sidebar({ solutionRequirements, solutionExplanation }: SidebarProps) {
+function Sidebar({
+  problem,
+  solutionRequirements,
+  solutionExplanation,
+}: SidebarProps) {
   const [activeTab, setActiveTab] = useState<string | null>('problem');
 
   const [
@@ -73,7 +78,7 @@ function Sidebar({ solutionRequirements, solutionExplanation }: SidebarProps) {
       </Tabs.List>
 
       <Tabs.Panel value="problem">
-        <ProblemStatement />
+        <ProblemStatement problem={problem} />
       </Tabs.Panel>
       <Tabs.Panel value="requirements">
         <SolutionRequirements
