@@ -1,6 +1,9 @@
 import { Tabs } from '@mantine/core';
 import '@mantine/core/styles.css';
+import { useDisclosure } from '@mantine/hooks';
+import { useEffect, useState } from 'react';
 
+import TabWithIndicator from '../TabWithIndicator';
 import ProblemStatement from './ProblemStatement';
 import RecommendedProducts from './RecommendedProducts';
 import SolutionRequirements from './SolutionRequirements';
@@ -9,45 +12,78 @@ interface SidebarProps {
   solutionRequirements: string[] | undefined;
   solutionExplanation: string | undefined;
 }
+
 function Sidebar({ solutionRequirements, solutionExplanation }: SidebarProps) {
-  const tabs = [
-    {
-      label: 'Problem',
-      value: 'problem',
-      element: <ProblemStatement />,
-    },
-    {
-      label: 'Requirements',
-      value: 'requirements',
-      element: (
+  const [activeTab, setActiveTab] = useState<string | null>('problem');
+
+  const [
+    isProblemIndicatorVisible,
+    { open: showProblemIndicator, close: closeProblemIndicator },
+  ] = useDisclosure(true);
+  const [
+    isRequirementsIndicatorVisible,
+    { open: showRequirementsIndicator, close: closeRequirementsIndicator },
+  ] = useDisclosure(true);
+  const [
+    isProductsIndicatorVisible,
+    { open: showProductsIndicator, close: closeProductsIndicator },
+  ] = useDisclosure(true);
+
+  useEffect(() => {
+    switch (activeTab) {
+      case 'problem':
+        closeProblemIndicator();
+        break;
+      case 'requirements':
+        closeRequirementsIndicator();
+        break;
+      case 'products':
+        closeProductsIndicator();
+        break;
+      default:
+        break;
+    }
+  }, [activeTab]);
+
+  return (
+    <Tabs
+      value={activeTab}
+      onChange={setActiveTab}
+      h="100%"
+      w="40%"
+      p="32px"
+      color="indigo.6"
+    >
+      <Tabs.List>
+        <TabWithIndicator
+          value="problem"
+          label="Problem"
+          isIndicatorVisible={isProblemIndicatorVisible}
+        />
+        <TabWithIndicator
+          value="requirements"
+          label="Requirements"
+          isIndicatorVisible={isRequirementsIndicatorVisible}
+        />
+        <TabWithIndicator
+          value="products"
+          label="Products"
+          isIndicatorVisible={isProductsIndicatorVisible}
+        />
+      </Tabs.List>
+
+      <Tabs.Panel value="problem">
+        <ProblemStatement />
+      </Tabs.Panel>
+      <Tabs.Panel value="requirements">
         <SolutionRequirements
           solutionRequirementsList={solutionRequirements}
           solutionExplanation={solutionExplanation}
         />
-      ),
-    },
-    {
-      label: 'Products',
-      value: 'products',
-      element: <RecommendedProducts />,
-    },
-  ];
-
-  return (
-    <Tabs defaultValue="problem" h="100%" w="40%" p="32px" color="indigo.6">
-      <Tabs.List grow>
-        {tabs.map((tab, index: number) => (
-          <Tabs.Tab key={index} value={tab.value} c="gray.7">
-            {tab.label}
-          </Tabs.Tab>
-        ))}
-      </Tabs.List>
-
-      {tabs.map((tab, index: number) => (
-        <Tabs.Panel key={index} value={tab.value}>
-          {tab.element}
-        </Tabs.Panel>
-      ))}
+      </Tabs.Panel>
+      <Tabs.Panel value="products">
+        <RecommendedProducts />
+      </Tabs.Panel>
     </Tabs>
   );
 }
