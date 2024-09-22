@@ -31,10 +31,6 @@ function Chatbot() {
   >(undefined, 20);
   const [inputValue, setInputValue] = useState('');
   const [isLoadingAgentResponse, setIsLoadingAgentResponse] = useState(false);
-  //   const [
-  //     areExampleQuestionsShowed,
-  //     { open: showExampleQuestions, close: closeExampleQuestions },
-  //   ] = useDisclosure(false);
 
   const addMessage = (message: Message) => {
     setStreamedMessage(message);
