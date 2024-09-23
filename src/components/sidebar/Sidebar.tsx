@@ -24,10 +24,8 @@ function Sidebar({ problem, features }: SidebarProps) {
     isRequirementsIndicatorVisible,
     { open: showRequirementsIndicator, close: closeRequirementsIndicator },
   ] = useDisclosure(true);
-  const [
-    isProductsIndicatorVisible,
-    { open: showProductsIndicator, close: closeProductsIndicator },
-  ] = useDisclosure(true);
+  const [isProductsIndicatorVisible, { close: closeProductsIndicator }] =
+    useDisclosure(true);
 
   useEffect(() => {
     switch (activeTab) {
@@ -44,6 +42,14 @@ function Sidebar({ problem, features }: SidebarProps) {
         break;
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    showProblemIndicator();
+  }, [problem]);
+
+  useEffect(() => {
+    showRequirementsIndicator();
+  }, [features]);
 
   return (
     <Tabs
