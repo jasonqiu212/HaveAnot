@@ -7,9 +7,15 @@ import {
   StateGraph,
 } from '@langchain/langgraph/web';
 
-import { getOpenAIModel } from './llm/llm';
-import { AgentNode } from './node/agentNode';
-import { ReactStateUpdaterNode } from './node/reactStateUpdaterNode';
+import { getOpenAIModel } from './Utils';
+import { AgentNode } from './node/AgentNode';
+import { ReactStateUpdaterNode } from './node/ReactStateUpdaterNode';
+
+export type GeneratedStateKeys =
+  | 'lastGeneratedChat'
+  | 'lastGeneratedProblem'
+  | 'lastGeneratedFeatures'
+  | 'lastGeneratedProducts';
 
 // defines the shape of the graph's state
 // by defining a reducer on messages, a node only needs to return the new messages to update the state
@@ -61,14 +67,32 @@ export class HaveAnotLanggraph {
     'lastGeneratedProblem',
     `Role:
     You are an expert at crafting problem statements.
+
     Task: 
     Output a problem statement based on the chat history and the current state of the problem, features and products.
     Output nothing if you do not think the problem statement needs to be updated, or if there isn't enough information to generate a problem statement.
+
     Example:
     **Problem Statement:**\n
     60% of Singaporeans lack the knowledge of what can be recycled when disposing their trash. This results in them choosing not to recycle because of the additional effort required for research, resulting in low recycling rates.`,
   );
   problemReactStateUpdaterNode: ReactStateUpdaterNode;
+
+  featuresAgentNode = new AgentNode(
+    getOpenAIModel(),
+    'lastGeneratedFeatures',
+    `Role:
+    `,
+  );
+  featuresReactStateUpdaterNode: ReactStateUpdaterNode;
+
+  productsAgentNode = new AgentNode(
+    getOpenAIModel(),
+    'lastGeneratedProducts',
+    `Role:
+    `,
+  );
+  productsReactStateUpdaterNode: ReactStateUpdaterNode;
 
   getReactStates: () => {
     problem?: string;
@@ -90,8 +114,8 @@ export class HaveAnotLanggraph {
     },
     setReactStateChat: (chat: string) => void,
     setReactStateProblem: (problem: string) => void,
-    setReactStateFeatures?: (features: string) => void,
-    setReactStateProducts?: (products: string) => void,
+    setReactStateFeatures: (features: string) => void,
+    setReactStateProducts: (products: string) => void,
   ) {
     this.getReactStates = getReactState;
     this.setReactStateChat = setReactStateChat;
@@ -121,6 +145,28 @@ export class HaveAnotLanggraph {
       },
       false,
     );
+    this.featuresReactStateUpdaterNode = new ReactStateUpdaterNode(
+      'lastGeneratedFeatures',
+      (_, stateValue) => {
+        const messageStr = stateValue?.content.toString();
+        if (messageStr) {
+          setReactStateFeatures(messageStr);
+        }
+        return this.getReactStates();
+      },
+      false,
+    );
+    this.productsReactStateUpdaterNode = new ReactStateUpdaterNode(
+      'lastGeneratedProducts',
+      (_, stateValue) => {
+        const messageStr = stateValue?.content.toString();
+        if (messageStr) {
+          setReactStateProducts(messageStr);
+        }
+        return this.getReactStates();
+      },
+      false,
+    );
 
     const langgraph = new StateGraph(StateSchema)
       .addNode('chatAgent', this.chatAgentNode.invoke)
@@ -130,11 +176,27 @@ export class HaveAnotLanggraph {
         'problemReactStateUpdater',
         this.problemReactStateUpdaterNode.invoke,
       )
+      .addNode('featuresAgent', this.featuresAgentNode.invoke)
+      .addNode(
+        'featuresReactStateUpdater',
+        this.featuresReactStateUpdaterNode.invoke,
+      )
+      .addNode('productsAgent', this.productsAgentNode.invoke)
+      .addNode(
+        'productsReactStateUpdater',
+        this.productsReactStateUpdaterNode.invoke,
+      )
+
       .addEdge('__start__', 'chatAgent')
       .addEdge('chatAgent', 'chatReactStateUpdater')
       .addEdge('chatReactStateUpdater', 'problemAgent')
       .addEdge('problemAgent', 'problemReactStateUpdater')
-      .addEdge('problemReactStateUpdater', 'chatAgent');
+      .addEdge('problemReactStateUpdater', 'featuresAgent')
+      .addEdge('featuresAgent', 'featuresReactStateUpdater')
+      .addEdge('featuresReactStateUpdater', 'productsAgent')
+      .addEdge('productsAgent', 'productsReactStateUpdater')
+      .addEdge('productsReactStateUpdater', 'chatAgent');
+
     this.app = langgraph.compile({
       checkpointer: new MemorySaver(),
       interruptAfter: ['problemReactStateUpdater'],

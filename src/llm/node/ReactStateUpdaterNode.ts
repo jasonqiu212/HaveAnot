@@ -1,15 +1,12 @@
-import { StateSchema } from '../Langgraph';
+import { GeneratedStateKeys, StateSchema } from '../Langgraph';
 
 export class ReactStateUpdaterNode {
   // state[stateKey] gives the state from the previous node
-  prevAgentGenerationStateKey:
-    | 'lastGeneratedChat'
-    | 'lastGeneratedProblem'
-    | 'lastGeneratedFeatures'
-    | 'lastGeneratedProducts';
+  prevAgentGenerationStateKey: GeneratedStateKeys;
+
   updateReactState: (
-    stateKey: typeof this.prevAgentGenerationStateKey,
-    stateValue: (typeof StateSchema.State)[typeof this.prevAgentGenerationStateKey],
+    stateKey: GeneratedStateKeys,
+    stateValue: (typeof StateSchema.State)[GeneratedStateKeys],
   ) => {
     problem?: string;
     features?: string;
@@ -18,14 +15,10 @@ export class ReactStateUpdaterNode {
   isUpdatingChatHistory: boolean;
 
   constructor(
-    prevAgentGenerationStateKey:
-      | 'lastGeneratedChat'
-      | 'lastGeneratedProblem'
-      | 'lastGeneratedFeatures'
-      | 'lastGeneratedProducts',
+    prevAgentGenerationStateKey: GeneratedStateKeys,
     updateReactState: (
-      stateKey: typeof this.prevAgentGenerationStateKey,
-      stateValue: (typeof StateSchema.State)[typeof this.prevAgentGenerationStateKey],
+      stateKey: GeneratedStateKeys,
+      stateValue: (typeof StateSchema.State)[GeneratedStateKeys],
     ) => {
       problem?: string;
       features?: string;

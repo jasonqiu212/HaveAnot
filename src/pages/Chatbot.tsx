@@ -5,10 +5,10 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ProblemStatementContext } from '../App';
-import { HaveAnotLanggraph } from '../Langgraph';
 import ChatHistory from '../components/ChatHistory';
 import ChatInput from '../components/ChatInput';
 import Sidebar from '../components/sidebar/Sidebar';
+import { HaveAnotLanggraph } from '../llm/Langgraph';
 
 export interface Message {
   role: 'Human' | 'AI';
