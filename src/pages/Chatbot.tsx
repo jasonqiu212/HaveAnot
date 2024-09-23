@@ -45,19 +45,17 @@ function Chatbot() {
     NodeJS.Timeout | undefined
   >();
 
-  // todo: this needs to be a list of products
-  const [products] = useState<string | undefined>();
+  // TODO: this needs to be a list of products
+  const [products, setProducts] = useState<string | undefined>();
   const [streamedProducts, setStreamedProducts] = useThrottledState<
     string | undefined
   >(undefined, 20);
 
   const [inputValue, setInputValue] = useState('');
-  const [isLoadingAgentResponseMap, setIsLoadingAgentResponseMap] = useState({
-    chat: false,
-    problem: false,
-    features: false,
-    products: false,
-  });
+  const [isChatAgentLoading, setIsChatAgentLoading] = useState(false);
+  const [isProblemAgentLoading, setIsProblemAgentLoading] = useState(false);
+  const [isFeaturesAgentLoading, setIsFeaturesAgentLoading] = useState(false);
+  const [isProductsAgentLoading, setIsProductsAgentLoading] = useState(false);
 
   const getReactStateForGraph = () => {
     return {
@@ -79,16 +77,17 @@ function Chatbot() {
   );
 
   const handleSubmit = async (message: string = inputValue) => {
-    if (
-      Object.values(isLoadingAgentResponseMap).every((value) => value === false)
-    ) {
+    const hasLoadingAgent =
+      isChatAgentLoading ||
+      isProblemAgentLoading ||
+      isFeaturesAgentLoading ||
+      isProductsAgentLoading;
+    if (!hasLoadingAgent) {
       setInputValue('');
-      setIsLoadingAgentResponseMap({
-        chat: true,
-        problem: true,
-        features: true,
-        products: true,
-      });
+      setIsChatAgentLoading(true);
+      setIsProblemAgentLoading(true);
+      setIsFeaturesAgentLoading(true);
+      setIsProductsAgentLoading(true);
       setMessages((prevMessages) => [
         ...prevMessages,
         { role: 'Human', text: message },
@@ -126,10 +125,7 @@ function Chatbot() {
         clearInterval(interval);
         setStreamingMessageInterval(undefined);
         setStreamedMessage(undefined);
-        setIsLoadingAgentResponseMap({
-          ...isLoadingAgentResponseMap,
-          chat: false,
-        });
+        setIsChatAgentLoading(false);
         return;
       }
 
@@ -165,17 +161,7 @@ function Chatbot() {
         clearInterval(interval);
         setStreamingProblemInterval(undefined);
         setStreamedProblem(undefined);
-        setIsLoadingAgentResponseMap({
-          ...isLoadingAgentResponseMap,
-          problem: false,
-        });
-        // NOTE: temporarily set all agents to have responded, since we have not implemented the problem, features, products agents
-        // setIsLoadingAgentResponseMap({
-        //   chat: false,
-        //   problem: false,
-        //   features: false,
-        //   products: false,
-        // });
+        setIsProblemAgentLoading(false);
         return;
       }
 
@@ -204,10 +190,7 @@ function Chatbot() {
         clearInterval(interval);
         setStreamingFeaturesInterval(undefined);
         setStreamedFeatures(undefined);
-        setIsLoadingAgentResponseMap({
-          ...isLoadingAgentResponseMap,
-          features: false,
-        });
+        setIsFeaturesAgentLoading(false);
         return;
       }
 
@@ -217,6 +200,17 @@ function Chatbot() {
 
     setStreamingFeaturesInterval(interval);
   }, [streamedFeatures]);
+
+  // TODO: If no need streaming effect, can replace streamedProducts with products
+  useEffect(() => {
+    if (streamedProducts === undefined) {
+      return;
+    }
+
+    setProducts(streamedProducts);
+    setStreamedProducts(undefined);
+    setIsProductsAgentLoading(false);
+  }, [streamedProducts]);
 
   if (initProblemStatement === null) {
     return (
@@ -244,7 +238,12 @@ function Chatbot() {
             handleSubmit={handleSubmit}
             inputValue={inputValue}
             setInputValue={setInputValue}
-            isLoading={isLoadingAgentResponseMap.chat}
+            isLoading={
+              isChatAgentLoading ||
+              isProblemAgentLoading ||
+              isFeaturesAgentLoading ||
+              isProductsAgentLoading
+            }
           />
         </Stack>
         <Sidebar problem={problem} features={features} />
