@@ -14,7 +14,7 @@ function Landing() {
   const [_, setProblemStatement] = useContext(ProblemStatementContext);
 
   const [isModalOpened, { close: setModalClose }] = useDisclosure(false);
-  const [isLoadingOpened, { open: setLoadingOpen }] = useDisclosure(false);
+  const [isLoadingAgentResponse, setIsLoadingAgentResponse] = useState(false);
 
   const [inputValue, setInputValue] = useState('');
   const accessControlAgentMessage = '';
@@ -37,7 +37,7 @@ function Landing() {
     // accessControlAgent.invoke(inputValue);
     setProblemStatement(inputValue);
     navigate('chatbot');
-    setLoadingOpen();
+    setIsLoadingAgentResponse(true);
   };
 
   return (
@@ -59,7 +59,7 @@ function Landing() {
             handleSubmit={handleSubmit}
             inputValue={inputValue}
             setInputValue={setInputValue}
-            isLoadingOpened={isLoadingOpened}
+            isLoading={isLoadingAgentResponse}
           />
         </Stack>
       </Center>
