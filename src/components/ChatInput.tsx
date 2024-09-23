@@ -1,4 +1,4 @@
-import { ActionIcon, Group, Loader, Textarea } from '@mantine/core';
+import { ActionIcon, Group, Textarea } from '@mantine/core';
 import '@mantine/core/styles.css';
 import { IconArrowNarrowRight } from '@tabler/icons-react';
 
@@ -23,6 +23,8 @@ function ChatInput({
     setInputValue(event.target.value);
   };
 
+  const canSubmit = !isLoading && inputValue !== '';
+
   return (
     <>
       <Group
@@ -43,28 +45,27 @@ function ChatInput({
           maxRows={9}
           placeholder={placeholder}
           onKeyDown={(event) => {
+            if (!canSubmit) {
+              return;
+            }
             if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault();
               handleSubmit();
             }
           }}
         />
-        {isLoading ? (
-          <Loader />
-        ) : (
-          <ActionIcon
-            disabled={inputValue ? false : true}
-            onClick={() => {
-              handleSubmit();
-            }}
-            variant="filled"
-            size="sm"
-            c="gray.4"
-            bg={inputValue ? 'indigo.6' : 'gray.1'}
-          >
-            <IconArrowNarrowRight />
-          </ActionIcon>
-        )}
+        <ActionIcon
+          disabled={!canSubmit}
+          onClick={() => {
+            handleSubmit();
+          }}
+          variant="filled"
+          size="sm"
+          c="gray.4"
+          bg={canSubmit ? 'indigo.6' : 'gray.1'}
+        >
+          <IconArrowNarrowRight />
+        </ActionIcon>
       </Group>
     </>
   );
