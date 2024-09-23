@@ -34,36 +34,38 @@ function ChatHistory({ messages }: ChatHistoryProps) {
       viewportRef={viewport}
     >
       <Stack w="100%" gap="24px">
-        {messages.map((message, index) => (
-          <Group
-            key={index}
-            maw="70%"
-            style={{
-              alignSelf: message.role === 'Human' ? 'flex-end' : 'flex-start',
-              backgroundColor:
-                message.role === 'Human'
-                  ? 'var(--mantine-color-gray-1)'
-                  : 'transparent',
-            }}
-            p={message.role === 'Human' ? '24px' : '0px'}
-            wrap="nowrap"
-            align="flex-start"
-          >
-            {message.role === 'AI' && (
-              <Avatar
-                src={logo}
-                radius="xl"
-                size="40px"
-                px="8px"
-                py="10px"
-                bd="1px solid #4C6EF5"
-              />
-            )}
-            <TypographyStylesProvider>
-              <ReactMarkdown>{message.text}</ReactMarkdown>
-            </TypographyStylesProvider>
-          </Group>
-        ))}
+        {messages.map((message, index) => {
+          const isHumanMessage = message.role === 'Human';
+          const isAIMessage = message.role === 'AI';
+          return (
+            <Group
+              key={index}
+              maw="70%"
+              bg={isHumanMessage ? 'gray.1' : 'transparent'}
+              style={{
+                alignSelf: isHumanMessage ? 'flex-end' : 'flex-start',
+                borderRadius: '8px',
+              }}
+              p={isHumanMessage ? '24px' : '0px'}
+              wrap="nowrap"
+              align="flex-start"
+            >
+              {isAIMessage && (
+                <Avatar
+                  src={logo}
+                  radius="xl"
+                  size="40px"
+                  px="8px"
+                  py="10px"
+                  bd="1px solid #4C6EF5"
+                />
+              )}
+              <TypographyStylesProvider>
+                <ReactMarkdown>{message.text}</ReactMarkdown>
+              </TypographyStylesProvider>
+            </Group>
+          );
+        })}
       </Stack>
     </ScrollArea>
   );
