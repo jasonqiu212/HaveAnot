@@ -11,7 +11,7 @@ interface SolutionRequirementsProps {
 function SolutionRequirements({ features }: SolutionRequirementsProps) {
   return (
     <Stack gap="24px" pt="32px">
-      <Text c="gray.7">Here's what we think your solution requires.</Text>
+      <Text c="gray.7">Here's a list of suggested solution requirements.</Text>
       {features ? <TextCard text={features} /> : <NotEnoughInformation />}
     </Stack>
   );

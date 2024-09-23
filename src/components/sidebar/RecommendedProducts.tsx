@@ -34,7 +34,8 @@ function RecommendedProducts() {
   return (
     <Stack gap="24px" pt="32px">
       <Text c="gray.7">
-        Here's what we think would help address your problem.
+        Here's a list of suggested products that we think would address your
+        problem.
       </Text>
 
       {recommendedProducts.map((recommendedProduct: string, index: number) => {
