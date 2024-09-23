@@ -46,7 +46,7 @@ function Chatbot() {
   >();
 
   // todo: this needs to be a list of products
-  const [products, setProducts] = useState<string | undefined>();
+  const [products] = useState<string | undefined>();
   const [streamedProducts, setStreamedProducts] = useThrottledState<
     string | undefined
   >(undefined, 20);
