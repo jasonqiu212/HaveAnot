@@ -28,6 +28,7 @@ function Chatbot() {
   const [streamingMessageInterval, setStreamingMessageInterval] = useState<
     NodeJS.Timeout | undefined
   >();
+
   const [problem, setProblem] = useState<string | undefined>();
   const [streamedProblem, setStreamedProblem] = useThrottledState<
     string | undefined
@@ -35,10 +36,15 @@ function Chatbot() {
   const [streamingProblemInterval, setStreamingProblemInterval] = useState<
     NodeJS.Timeout | undefined
   >();
+
   const [features, setFeatures] = useState<string | undefined>();
   const [streamedFeatures, setStreamedFeatures] = useThrottledState<
     string | undefined
   >(undefined, 20);
+  const [streamingFeaturesInterval, setStreamingFeaturesInterval] = useState<
+    NodeJS.Timeout | undefined
+  >();
+
   // todo: this needs to be a list of products
   const [products, setProducts] = useState<string | undefined>();
   const [streamedProducts, setStreamedProducts] = useThrottledState<
@@ -99,7 +105,7 @@ function Chatbot() {
     }
   }, []);
 
-  // gives the effect that chat messages are being streamed in
+  // Streaming effect for chat message
   useEffect(() => {
     if (streamedMessage === undefined) {
       return;
@@ -112,23 +118,11 @@ function Chatbot() {
         prevMessages.slice(0, prevMessages.length - 1),
       );
     }
+
+    setMessages((prevMessages) => [...prevMessages, { role: 'AI', text: '' }]);
     let i = 0;
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { role: 'AI', text: '' } as Message,
-    ]);
     const interval = setInterval(() => {
-      if (i < streamedMessage.length) {
-        setMessages((prevMessages) => {
-          const messages = [...prevMessages];
-          messages[messages.length - 1] = {
-            role: 'AI',
-            text: streamedMessage.slice(0, i + 1),
-          };
-          return messages;
-        });
-        i++;
-      } else {
+      if (i >= streamedMessage.length) {
         clearInterval(interval);
         setStreamingMessageInterval(undefined);
         setStreamedMessage(undefined);
@@ -136,12 +130,24 @@ function Chatbot() {
           ...isLoadingAgentResponseMap,
           chat: false,
         });
+        return;
       }
+
+      setMessages((prevMessages) => {
+        const messages = [...prevMessages];
+        messages[messages.length - 1] = {
+          role: 'AI',
+          text: streamedMessage.slice(0, i + 1),
+        };
+        return messages;
+      });
+      i++;
     }, 10);
+
     setStreamingMessageInterval(interval);
   }, [streamedMessage]);
 
-  // gives the effect that problem in sidebar is being streamed in
+  // Streaming effect for problem statement in sidebar
   useEffect(() => {
     if (streamedProblem === undefined) {
       return;
@@ -151,13 +157,11 @@ function Chatbot() {
       clearInterval(streamingProblemInterval);
       setStreamingProblemInterval(undefined);
     }
+
     setProblem('');
     let i = 0;
     const interval = setInterval(() => {
-      if (i < streamedProblem.length) {
-        setProblem(streamedProblem.slice(0, i + 1));
-        i++;
-      } else {
+      if (i >= streamedProblem.length) {
         clearInterval(interval);
         setStreamingProblemInterval(undefined);
         setStreamedProblem(undefined);
@@ -166,16 +170,53 @@ function Chatbot() {
           problem: false,
         });
         // NOTE: temporarily set all agents to have responded, since we have not implemented the problem, features, products agents
-        setIsLoadingAgentResponseMap({
-          chat: false,
-          problem: false,
-          features: false,
-          products: false,
-        });
+        // setIsLoadingAgentResponseMap({
+        //   chat: false,
+        //   problem: false,
+        //   features: false,
+        //   products: false,
+        // });
+        return;
       }
+
+      setProblem(streamedProblem.slice(0, i + 1));
+      i++;
     }, 10);
+
     setStreamingProblemInterval(interval);
   }, [streamedProblem]);
+
+  // Streaming effect for product features in sidebar
+  useEffect(() => {
+    if (streamedFeatures === undefined) {
+      return;
+    }
+
+    if (streamingFeaturesInterval) {
+      clearInterval(streamingFeaturesInterval);
+      setStreamingFeaturesInterval(undefined);
+    }
+
+    setFeatures('');
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i >= streamedFeatures.length) {
+        clearInterval(interval);
+        setStreamingFeaturesInterval(undefined);
+        setStreamedFeatures(undefined);
+        setIsLoadingAgentResponseMap({
+          ...isLoadingAgentResponseMap,
+          features: false,
+        });
+        return;
+      }
+
+      setFeatures(streamedFeatures.slice(0, i + 1));
+      i++;
+    }, 10);
+
+    setStreamingFeaturesInterval(interval);
+  }, [streamedFeatures]);
 
   if (initProblemStatement === null) {
     return (
@@ -206,11 +247,7 @@ function Chatbot() {
             isLoading={isLoadingAgentResponseMap.chat}
           />
         </Stack>
-        <Sidebar
-          problem={problem}
-          solutionRequirements={[]}
-          solutionExplanation={features}
-        />
+        <Sidebar problem={problem} features={features} />
       </Group>
     );
   }
