@@ -11,34 +11,38 @@ import { getOpenAIModel } from './Utils';
 import { AgentNode } from './node/AgentNode';
 import { ReactStateUpdaterNode } from './node/ReactStateUpdaterNode';
 
-export type GeneratedStateKeys =
+export type GeneratedStateKey =
   | 'lastGeneratedChat'
   | 'lastGeneratedProblem'
   | 'lastGeneratedFeatures'
   | 'lastGeneratedProducts';
 
-// defines the shape of the graph's state
-// by defining a reducer on messages, a node only needs to return the new messages to update the state
-// instead of having to return the previous messages + new messages
+// Does not include chat, since state.messages already includes chat history and
+// users cannot modify displayed chat
+export interface DisplayedResponses {
+  problem?: string;
+  features?: string;
+  products?: string;
+}
+
 export const StateSchema = Annotation.Root({
+  // List of user inputs
   chatHistory: Annotation<AIMessage[] | undefined>({
+    // By defining the reducer, a node only needs to return new messages to update the state,
+    // instead of returning previous and new messages
     reducer: (
       left: AIMessage[] | undefined,
       right: AIMessage[] | undefined,
     ) => [...(left ?? []), ...(right ?? [])],
   }),
+
+  currentReactState: Annotation<DisplayedResponses | undefined>,
+
+  // Only used for ReactStateUpdatedNodes
   lastGeneratedChat: Annotation<AIMessage | undefined>,
   lastGeneratedProblem: Annotation<AIMessage | undefined>,
   lastGeneratedFeatures: Annotation<AIMessage | undefined>,
   lastGeneratedProducts: Annotation<AIMessage | undefined>,
-  currentReactState: Annotation<
-    | {
-        problem?: string;
-        features?: string;
-        products?: string;
-      }
-    | undefined
-  >,
 });
 
 export class HaveAnotLanggraph {
@@ -73,7 +77,6 @@ export class HaveAnotLanggraph {
     Output nothing if you do not think the problem statement needs to be updated, or if there isn't enough information to generate a problem statement.
 
     Example:
-    **Problem Statement:**\n
     60% of Singaporeans lack the knowledge of what can be recycled when disposing their trash. This results in them choosing not to recycle because of the additional effort required for research, resulting in low recycling rates.`,
   );
   problemReactStateUpdaterNode: ReactStateUpdaterNode;
@@ -81,24 +84,18 @@ export class HaveAnotLanggraph {
   featuresAgentNode = new AgentNode(
     getOpenAIModel(),
     'lastGeneratedFeatures',
-    `Role:
-    `,
+    `Just output: I am a features agent.`,
   );
   featuresReactStateUpdaterNode: ReactStateUpdaterNode;
 
   productsAgentNode = new AgentNode(
     getOpenAIModel(),
     'lastGeneratedProducts',
-    `Role:
-    `,
+    `Just output: I am a features agent.`,
   );
   productsReactStateUpdaterNode: ReactStateUpdaterNode;
 
-  getReactStates: () => {
-    problem?: string;
-    features?: string;
-    products?: string;
-  }; // doesn't include chat, since state.messages already includes chat history
+  getReactStates: () => DisplayedResponses;
   setReactStateChat: (chat: string) => void;
   setReactStateProblem?: (problem: string) => void;
   setReactStateFeatures?: (features: string) => void;
@@ -107,11 +104,7 @@ export class HaveAnotLanggraph {
   app: CompiledStateGraph<any, any, any, StateDefinition>;
 
   constructor(
-    getReactState: () => {
-      problem?: string;
-      features?: string;
-      products?: string;
-    },
+    getReactState: () => DisplayedResponses,
     setReactStateChat: (chat: string) => void,
     setReactStateProblem: (problem: string) => void,
     setReactStateFeatures: (features: string) => void,
@@ -125,7 +118,7 @@ export class HaveAnotLanggraph {
 
     this.chatReactStateUpdaterNode = new ReactStateUpdaterNode(
       'lastGeneratedChat',
-      (_, stateValue) => {
+      (stateValue) => {
         const messageStr = stateValue?.content.toString();
         if (messageStr) {
           setReactStateChat(messageStr);
@@ -136,7 +129,7 @@ export class HaveAnotLanggraph {
     );
     this.problemReactStateUpdaterNode = new ReactStateUpdaterNode(
       'lastGeneratedProblem',
-      (_, stateValue) => {
+      (stateValue) => {
         const messageStr = stateValue?.content.toString();
         if (messageStr) {
           setReactStateProblem(messageStr);
@@ -147,7 +140,7 @@ export class HaveAnotLanggraph {
     );
     this.featuresReactStateUpdaterNode = new ReactStateUpdaterNode(
       'lastGeneratedFeatures',
-      (_, stateValue) => {
+      (stateValue) => {
         const messageStr = stateValue?.content.toString();
         if (messageStr) {
           setReactStateFeatures(messageStr);
@@ -158,7 +151,7 @@ export class HaveAnotLanggraph {
     );
     this.productsReactStateUpdaterNode = new ReactStateUpdaterNode(
       'lastGeneratedProducts',
-      (_, stateValue) => {
+      (stateValue) => {
         const messageStr = stateValue?.content.toString();
         if (messageStr) {
           setReactStateProducts(messageStr);
@@ -199,7 +192,7 @@ export class HaveAnotLanggraph {
 
     this.app = langgraph.compile({
       checkpointer: new MemorySaver(),
-      interruptAfter: ['problemReactStateUpdater'],
+      interruptAfter: ['productsReactStateUpdater'],
     });
   }
 

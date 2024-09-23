@@ -92,6 +92,7 @@ function Chatbot() {
         ...prevMessages,
         { role: 'Human', text: message },
       ]);
+
       // currently only supports one thread
       await graph.invoke(message, { configurable: { thread_id: 1 } });
     }

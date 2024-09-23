@@ -1,29 +1,21 @@
-import { GeneratedStateKeys, StateSchema } from '../Langgraph';
+import {
+  DisplayedResponses,
+  GeneratedStateKey,
+  StateSchema,
+} from '../Langgraph';
 
 export class ReactStateUpdaterNode {
-  // state[stateKey] gives the state from the previous node
-  prevAgentGenerationStateKey: GeneratedStateKeys;
-
+  prevAgentGenerationStateKey: GeneratedStateKey;
   updateReactState: (
-    stateKey: GeneratedStateKeys,
-    stateValue: (typeof StateSchema.State)[GeneratedStateKeys],
-  ) => {
-    problem?: string;
-    features?: string;
-    products?: string;
-  };
+    stateValue: (typeof StateSchema.State)[GeneratedStateKey],
+  ) => DisplayedResponses;
   isUpdatingChatHistory: boolean;
 
   constructor(
-    prevAgentGenerationStateKey: GeneratedStateKeys,
+    prevAgentGenerationStateKey: GeneratedStateKey,
     updateReactState: (
-      stateKey: GeneratedStateKeys,
-      stateValue: (typeof StateSchema.State)[GeneratedStateKeys],
-    ) => {
-      problem?: string;
-      features?: string;
-      products?: string;
-    },
+      stateValue: (typeof StateSchema.State)[GeneratedStateKey],
+    ) => DisplayedResponses,
     isUpdatingChatHistory: boolean,
   ) {
     this.prevAgentGenerationStateKey = prevAgentGenerationStateKey;
@@ -36,12 +28,13 @@ export class ReactStateUpdaterNode {
   ): Partial<
     Pick<typeof StateSchema.State, 'currentReactState' | 'chatHistory'>
   > => {
-    console.log('state in reactstateupdaternode', state);
-    const previousAgentGeneration = state[this.prevAgentGenerationStateKey];
-    const updatedReactStates = this.updateReactState(
+    console.log(
+      'state in reactstateupdaternode',
+      state,
       this.prevAgentGenerationStateKey,
-      previousAgentGeneration,
     );
+    const previousAgentGeneration = state[this.prevAgentGenerationStateKey];
+    const updatedReactStates = this.updateReactState(previousAgentGeneration);
 
     // if (this.isUpdatingChatHistory) {
     //   return {

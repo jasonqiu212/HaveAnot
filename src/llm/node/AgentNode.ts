@@ -29,8 +29,10 @@ export class AgentNode {
   }
 
   invoke = async (state: typeof StateSchema.State) => {
+    // currentReactState used, since users can edit displayed responses
     const systemMessage = new SystemMessage(
       `${this.systemPrompt}
+
       Here are the current states:
       Problem: ${state.currentReactState?.problem ?? '<empty>'}
       Suggested Solution Features: ${state.currentReactState?.features ?? '<empty>'}
