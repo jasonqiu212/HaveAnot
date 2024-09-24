@@ -16,7 +16,12 @@ function TabWithIndicator({
 }: TabWithIndicatorProps) {
   const isDisabled = !isProcessing && isViewed;
   return (
-    <Indicator color="indigo.6" disabled={isDisabled} processing={isProcessing}>
+    <Indicator
+      color="indigo.6"
+      offset={7}
+      disabled={isDisabled}
+      processing={isProcessing}
+    >
       <Tabs.Tab value={value} c="gray.7">
         {label}
       </Tabs.Tab>
