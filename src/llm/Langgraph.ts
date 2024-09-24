@@ -1,4 +1,4 @@
-import { AIMessage, HumanMessage } from '@langchain/core/messages';
+import { AIMessage, BaseMessage, HumanMessage } from '@langchain/core/messages';
 import {
   Annotation,
   CompiledStateGraph,
@@ -9,7 +9,7 @@ import {
 
 import { getOpenAIModel } from './Utils';
 import { AgentNode } from './node/AgentNode';
-import { ReactStateUpdaterNode } from './node/ReactStateUpdaterNode';
+import { DisplayedResponseUpdaterNode } from './node/DisplayedResponseUpdaterNode';
 
 export type GeneratedStateKey =
   | 'lastGeneratedChat'
@@ -26,19 +26,23 @@ export interface DisplayedResponses {
 }
 
 export const StateSchema = Annotation.Root({
-  // List of user inputs
-  chatHistory: Annotation<AIMessage[] | undefined>({
+  chatHistory: Annotation<BaseMessage[] | undefined>({
     // By defining the reducer, a node only needs to return new messages to update the state,
     // instead of returning previous and new messages
     reducer: (
-      left: AIMessage[] | undefined,
-      right: AIMessage[] | undefined,
-    ) => [...(left ?? []), ...(right ?? [])],
+      left: BaseMessage[] | undefined,
+      right: BaseMessage[] | undefined,
+    ) => {
+      console.log(left);
+      console.log(right);
+      return [...(left ?? []), ...(right ?? [])];
+    },
   }),
 
-  currentReactState: Annotation<DisplayedResponses | undefined>,
+  // Provides context to model on last set of generated responses displayed to user
+  // Updated whenever user submits input
+  displayedResponses: Annotation<DisplayedResponses | undefined>,
 
-  // Only used for ReactStateUpdatedNodes
   lastGeneratedChat: Annotation<AIMessage | undefined>,
   lastGeneratedProblem: Annotation<AIMessage | undefined>,
   lastGeneratedFeatures: Annotation<AIMessage | undefined>,
@@ -56,6 +60,7 @@ export class HaveAnotLanggraph {
     Chat with the user to understand their problem statement, and prompt them to provide more details if necessary to formulate a good problem statement.
     If you are asked to update the problem, features or products, respond that this has been done, with the assumption that will be done automatically for you.
     Take both the chat history and the current state of the problem, features and products into account when responding.`,
+    true,
   );
   //   Task: Determine if the user's problem statement is detailed enough. If it is, call the tool to summarise what the requirements of a solution for the overall problem statement.
   // Do not give a suggestion of the updated problem statement, unless the user is unable to improve on the problem statement after 3 prompts.
@@ -64,7 +69,7 @@ export class HaveAnotLanggraph {
   // Examples:
   // User: 60% of Singaporeans lack the knowledge of what can be recycled when disposing their trash. This results in them choosing not to recycle because of the additional effort required for research, resulting in low recycling rates.
   // Expert: Good! This is a detailed and specific problem statement that mentions a specific statistic of 60% and a specific nationality is part of the problem. It is clear what the problem is, who it affects, and why it is a problem.
-  chatReactStateUpdaterNode: ReactStateUpdaterNode;
+  displayedChatUpdaterNode: DisplayedResponseUpdaterNode;
 
   problemAgentNode = new AgentNode(
     getOpenAIModel(),
@@ -78,131 +83,125 @@ export class HaveAnotLanggraph {
 
     Example:
     60% of Singaporeans lack the knowledge of what can be recycled when disposing their trash. This results in them choosing not to recycle because of the additional effort required for research, resulting in low recycling rates.`,
+    false,
   );
-  problemReactStateUpdaterNode: ReactStateUpdaterNode;
+  displayedProblemUpdaterNode: DisplayedResponseUpdaterNode;
 
   featuresAgentNode = new AgentNode(
     getOpenAIModel(),
     'lastGeneratedFeatures',
     `Just output: I am a features agent.`,
+    false,
   );
-  featuresReactStateUpdaterNode: ReactStateUpdaterNode;
+  displayedFeaturesUpdaterNode: DisplayedResponseUpdaterNode;
 
   productsAgentNode = new AgentNode(
     getOpenAIModel(),
     'lastGeneratedProducts',
     `Just output: I am a features agent.`,
+    false,
   );
-  productsReactStateUpdaterNode: ReactStateUpdaterNode;
+  displayedProductsUpdaterNode: DisplayedResponseUpdaterNode;
 
-  getReactStates: () => DisplayedResponses;
-  setReactStateChat: (chat: string) => void;
-  setReactStateProblem?: (problem: string) => void;
-  setReactStateFeatures?: (features: string) => void;
-  setReactStateProducts?: (products: string) => void;
+  setDisplayedChat: (chat: string) => void;
+  setDisplayedProblem?: (problem: string) => void;
+  setDisplayedFeatures?: (features: string) => void;
+  setDisplayedProducts?: (products: string) => void;
 
   app: CompiledStateGraph<any, any, any, StateDefinition>;
 
   constructor(
-    getReactState: () => DisplayedResponses,
-    setReactStateChat: (chat: string) => void,
-    setReactStateProblem: (problem: string) => void,
-    setReactStateFeatures: (features: string) => void,
-    setReactStateProducts: (products: string) => void,
+    setDisplayedChat: (chat: string) => void,
+    setDisplayedProblem: (problem: string) => void,
+    setDisplayedFeatures: (features: string) => void,
+    setDisplayedProducts: (products: string) => void,
   ) {
-    this.getReactStates = getReactState;
-    this.setReactStateChat = setReactStateChat;
-    this.setReactStateProblem = setReactStateProblem;
-    this.setReactStateFeatures = setReactStateFeatures;
-    this.setReactStateProducts = setReactStateProducts;
+    this.setDisplayedChat = setDisplayedChat;
+    this.setDisplayedProblem = setDisplayedProblem;
+    this.setDisplayedFeatures = setDisplayedFeatures;
+    this.setDisplayedProducts = setDisplayedProducts;
 
-    this.chatReactStateUpdaterNode = new ReactStateUpdaterNode(
+    this.displayedChatUpdaterNode = new DisplayedResponseUpdaterNode(
       'lastGeneratedChat',
       (stateValue) => {
         const messageStr = stateValue?.content.toString();
         if (messageStr) {
-          setReactStateChat(messageStr);
+          setDisplayedChat(messageStr);
         }
-        return this.getReactStates();
       },
-      true,
     );
-    this.problemReactStateUpdaterNode = new ReactStateUpdaterNode(
+    this.displayedProblemUpdaterNode = new DisplayedResponseUpdaterNode(
       'lastGeneratedProblem',
       (stateValue) => {
         const messageStr = stateValue?.content.toString();
         if (messageStr) {
-          setReactStateProblem(messageStr);
+          setDisplayedProblem(messageStr);
         }
-        return this.getReactStates();
       },
-      false,
     );
-    this.featuresReactStateUpdaterNode = new ReactStateUpdaterNode(
+    this.displayedFeaturesUpdaterNode = new DisplayedResponseUpdaterNode(
       'lastGeneratedFeatures',
       (stateValue) => {
         const messageStr = stateValue?.content.toString();
         if (messageStr) {
-          setReactStateFeatures(messageStr);
+          setDisplayedFeatures(messageStr);
         }
-        return this.getReactStates();
       },
-      false,
     );
-    this.productsReactStateUpdaterNode = new ReactStateUpdaterNode(
+    this.displayedProductsUpdaterNode = new DisplayedResponseUpdaterNode(
       'lastGeneratedProducts',
       (stateValue) => {
         const messageStr = stateValue?.content.toString();
         if (messageStr) {
-          setReactStateProducts(messageStr);
+          setDisplayedProducts(messageStr);
         }
-        return this.getReactStates();
       },
-      false,
     );
 
     const langgraph = new StateGraph(StateSchema)
       .addNode('chatAgent', this.chatAgentNode.invoke)
-      .addNode('chatReactStateUpdater', this.chatReactStateUpdaterNode.invoke)
+      .addNode('displayedChatUpdater', this.displayedChatUpdaterNode.invoke)
       .addNode('problemAgent', this.problemAgentNode.invoke)
       .addNode(
-        'problemReactStateUpdater',
-        this.problemReactStateUpdaterNode.invoke,
+        'displayedProblemUpdater',
+        this.displayedProblemUpdaterNode.invoke,
       )
       .addNode('featuresAgent', this.featuresAgentNode.invoke)
       .addNode(
-        'featuresReactStateUpdater',
-        this.featuresReactStateUpdaterNode.invoke,
+        'displayedFeaturesUpdater',
+        this.displayedFeaturesUpdaterNode.invoke,
       )
       .addNode('productsAgent', this.productsAgentNode.invoke)
       .addNode(
-        'productsReactStateUpdater',
-        this.productsReactStateUpdaterNode.invoke,
+        'displayedProductsUpdater',
+        this.displayedProductsUpdaterNode.invoke,
       )
 
       .addEdge('__start__', 'chatAgent')
-      .addEdge('chatAgent', 'chatReactStateUpdater')
-      .addEdge('chatReactStateUpdater', 'problemAgent')
-      .addEdge('problemAgent', 'problemReactStateUpdater')
-      .addEdge('problemReactStateUpdater', 'featuresAgent')
-      .addEdge('featuresAgent', 'featuresReactStateUpdater')
-      .addEdge('featuresReactStateUpdater', 'productsAgent')
-      .addEdge('productsAgent', 'productsReactStateUpdater')
-      .addEdge('productsReactStateUpdater', 'chatAgent');
+      .addEdge('chatAgent', 'displayedChatUpdater')
+      .addEdge('displayedChatUpdater', 'problemAgent')
+      .addEdge('problemAgent', 'displayedProblemUpdater')
+      .addEdge('displayedProblemUpdater', 'featuresAgent')
+      .addEdge('featuresAgent', 'displayedFeaturesUpdater')
+      .addEdge('displayedFeaturesUpdater', 'productsAgent')
+      .addEdge('productsAgent', 'displayedProductsUpdater')
+      .addEdge('displayedProductsUpdater', 'chatAgent');
 
     this.app = langgraph.compile({
       checkpointer: new MemorySaver(),
-      interruptAfter: ['productsReactStateUpdater'],
+      interruptAfter: ['displayedProductsUpdater'],
     });
   }
 
   async invoke(
     message: string,
+    displayedResponses: DisplayedResponses,
     config: { configurable: { thread_id: number } },
   ) {
     return this.app.invoke(
       {
         chatHistory: [new HumanMessage(message)],
+        displayedResponses: displayedResponses,
       },
       config,
     );

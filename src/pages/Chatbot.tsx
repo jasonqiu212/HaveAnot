@@ -1,8 +1,7 @@
-import { Alert, Group, Modal, Stack, Text } from '@mantine/core';
+import { Group, Stack } from '@mantine/core';
 import '@mantine/core/styles.css';
 import { useThrottledState } from '@mantine/hooks';
 import { useContext, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { ProblemStatementContext } from '../App';
 import ChatHistory from '../components/ChatHistory';
@@ -16,7 +15,6 @@ export interface Message {
 }
 
 function Chatbot() {
-  const navigate = useNavigate();
   const [initProblemStatement, _] = useContext(ProblemStatementContext);
 
   // streamedMessage, streamedProblem, streamedFeatures, streamedProducts are set by HaveAnotLanggraph
@@ -57,17 +55,17 @@ function Chatbot() {
   const [isFeaturesAgentLoading, setIsFeaturesAgentLoading] = useState(false);
   const [isProductsAgentLoading, setIsProductsAgentLoading] = useState(false);
 
-  const getReactStateForGraph = () => {
+  const getDisplayedResponses = () => {
     return {
-      problem: streamedProblem !== undefined ? streamedProblem : problem,
-      features: streamedFeatures !== undefined ? streamedFeatures : features,
-      products: streamedProducts !== undefined ? streamedProducts : products,
+      problem: streamedProblem ?? problem,
+      features: streamedFeatures ?? features,
+      products: streamedProducts ?? products,
     };
   };
+
   const graph = useMemo(
     () =>
       new HaveAnotLanggraph(
-        getReactStateForGraph,
         setStreamedMessage,
         setStreamedProblem,
         setStreamedFeatures,
@@ -82,6 +80,7 @@ function Chatbot() {
       isProblemAgentLoading ||
       isFeaturesAgentLoading ||
       isProductsAgentLoading;
+
     if (!hasLoadingAgent) {
       setInputValue('');
       setIsChatAgentLoading(true);
@@ -94,7 +93,9 @@ function Chatbot() {
       ]);
 
       // currently only supports one thread
-      await graph.invoke(message, { configurable: { thread_id: 1 } });
+      await graph.invoke(message, getDisplayedResponses(), {
+        configurable: { thread_id: 1 },
+      });
     }
   };
 
@@ -213,44 +214,27 @@ function Chatbot() {
     setIsProductsAgentLoading(false);
   }, [streamedProducts]);
 
-  if (initProblemStatement === null) {
-    return (
-      <Modal
-        centered
-        onClose={() => {
-          navigate('/');
-        }}
-        opened
-        title={<Text fw="bold">Unauthorised</Text>}
-      >
-        <Alert color="red">
-          Please come up with a problem statement first.
-        </Alert>
-      </Modal>
-    );
-  } else {
-    return (
-      <Group h="100%" wrap="nowrap">
-        <Stack w="59%" h="100%" p="40px" bg="gray.0" align="center">
-          <ChatHistory messages={messages} />
-          <ChatInput
-            placeholder="Share more details about the problem you wish to solve"
-            backgroundColor="white"
-            handleSubmit={handleSubmit}
-            inputValue={inputValue}
-            setInputValue={setInputValue}
-            isLoading={
-              isChatAgentLoading ||
-              isProblemAgentLoading ||
-              isFeaturesAgentLoading ||
-              isProductsAgentLoading
-            }
-          />
-        </Stack>
-        <Sidebar problem={problem} features={features} />
-      </Group>
-    );
-  }
+  return (
+    <Group h="100%" wrap="nowrap">
+      <Stack w="59%" h="100%" p="40px" bg="gray.0" align="center">
+        <ChatHistory messages={messages} />
+        <ChatInput
+          placeholder="Share more details about the problem you wish to solve"
+          backgroundColor="white"
+          handleSubmit={handleSubmit}
+          inputValue={inputValue}
+          setInputValue={setInputValue}
+          isLoading={
+            isChatAgentLoading ||
+            isProblemAgentLoading ||
+            isFeaturesAgentLoading ||
+            isProductsAgentLoading
+          }
+        />
+      </Stack>
+      <Sidebar problem={problem} features={features} />
+    </Group>
+  );
 }
 
 export default Chatbot;

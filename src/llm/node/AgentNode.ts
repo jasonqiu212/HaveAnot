@@ -13,6 +13,7 @@ export class AgentNode {
   >;
   stateKey: string;
   systemPrompt: string;
+  shouldUpdateChatHistory: boolean;
 
   constructor(
     model: Runnable<
@@ -22,21 +23,22 @@ export class AgentNode {
     >,
     stateKey: string,
     systemPrompt: string,
+    shouldUpdateChatHistory: boolean,
   ) {
     this.model = model;
     this.stateKey = stateKey;
     this.systemPrompt = systemPrompt;
+    this.shouldUpdateChatHistory = shouldUpdateChatHistory;
   }
 
   invoke = async (state: typeof StateSchema.State) => {
-    // currentReactState used, since users can edit displayed responses
     const systemMessage = new SystemMessage(
       `${this.systemPrompt}
 
       Here are the current states:
-      Problem: ${state.currentReactState?.problem ?? '<empty>'}
-      Suggested Solution Features: ${state.currentReactState?.features ?? '<empty>'}
-      Suggested Products: ${state.currentReactState?.products ?? '<empty>'}`,
+      Problem: ${state.displayedResponses?.problem ?? '<empty>'}
+      Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
+      Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`,
     );
 
     const messages = [
@@ -52,6 +54,9 @@ export class AgentNode {
 
     const response = await this.model.invoke(messages);
 
+    if (this.shouldUpdateChatHistory) {
+      return { [this.stateKey]: response, chatHistory: [response] };
+    }
     return { [this.stateKey]: response };
   };
 }
