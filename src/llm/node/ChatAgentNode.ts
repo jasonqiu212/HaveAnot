@@ -1,19 +1,12 @@
 import { BaseLanguageModelInput } from '@langchain/core/language_models/base';
-import { AIMessageChunk, SystemMessage } from '@langchain/core/messages';
+import { AIMessageChunk } from '@langchain/core/messages';
 import { Runnable } from '@langchain/core/runnables';
 import { ChatOpenAICallOptions } from '@langchain/openai';
 
 import { StateSchema } from '../Langgraph';
+import { AgentNode } from './AgentNode';
 
-export class AgentNode {
-  model: Runnable<
-    BaseLanguageModelInput,
-    AIMessageChunk,
-    ChatOpenAICallOptions
-  >;
-  stateKey: string;
-  systemPrompt: string;
-
+export class ChatAgentNode extends AgentNode {
   constructor(
     model: Runnable<
       BaseLanguageModelInput,
@@ -23,24 +16,10 @@ export class AgentNode {
     stateKey: string,
     systemPrompt: string,
   ) {
-    this.model = model;
-    this.stateKey = stateKey;
-    this.systemPrompt = systemPrompt;
+    super(model, stateKey, systemPrompt);
   }
 
-  getSystemMessage = (state: typeof StateSchema.State) =>
-    new SystemMessage(
-      `${this.systemPrompt}
-
-      Here are the previously generated states:
-      Problem: ${state.displayedResponses?.problem ?? '<empty>'}
-      Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
-      Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`,
-    );
-
-  invoke = async (
-    state: typeof StateSchema.State,
-  ): Promise<Partial<typeof StateSchema.State>> => {
+  invoke = async (state: typeof StateSchema.State) => {
     const systemMessage = this.getSystemMessage(state);
 
     const messages = [
@@ -56,6 +35,6 @@ export class AgentNode {
 
     const response = await this.model.invoke(messages);
 
-    return { [this.stateKey]: response };
+    return { [this.stateKey]: response, chatHistory: [response] };
   };
 }

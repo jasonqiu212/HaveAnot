@@ -9,7 +9,9 @@ import {
 
 import { getOpenAIModel } from './Utils';
 import { AgentNode } from './node/AgentNode';
+import { ChatAgentNode } from './node/ChatAgentNode';
 import { DisplayedResponseUpdaterNode } from './node/DisplayedResponseUpdaterNode';
+import { FeaturesAgentNode } from './node/FeaturesAgentNode';
 
 export type GeneratedStateKey =
   | 'lastGeneratedChat'
@@ -33,8 +35,6 @@ export const StateSchema = Annotation.Root({
       left: BaseMessage[] | undefined,
       right: BaseMessage[] | undefined,
     ) => {
-      console.log(left);
-      console.log(right);
       return [...(left ?? []), ...(right ?? [])];
     },
   }),
@@ -50,7 +50,7 @@ export const StateSchema = Annotation.Root({
 });
 
 export class HaveAnotLanggraph {
-  chatAgentNode = new AgentNode(
+  chatAgentNode = new ChatAgentNode(
     getOpenAIModel(),
     'lastGeneratedChat',
     `Role: 
@@ -60,15 +60,7 @@ export class HaveAnotLanggraph {
     Chat with the user to understand their problem statement, and prompt them to provide more details if necessary to formulate a good problem statement.
     If you are asked to update the problem, features or products, respond that this has been done, with the assumption that will be done automatically for you.
     Take both the chat history and the current state of the problem, features and products into account when responding.`,
-    true,
   );
-  //   Task: Determine if the user's problem statement is detailed enough. If it is, call the tool to summarise what the requirements of a solution for the overall problem statement.
-  // Do not give a suggestion of the updated problem statement, unless the user is unable to improve on the problem statement after 3 prompts.
-  // Output: You must always return an textual explanation in your response, and the problem statement based on the current context you have, without any improvements.,
-
-  // Examples:
-  // User: 60% of Singaporeans lack the knowledge of what can be recycled when disposing their trash. This results in them choosing not to recycle because of the additional effort required for research, resulting in low recycling rates.
-  // Expert: Good! This is a detailed and specific problem statement that mentions a specific statistic of 60% and a specific nationality is part of the problem. It is clear what the problem is, who it affects, and why it is a problem.
   displayedChatUpdaterNode: DisplayedResponseUpdaterNode;
 
   problemAgentNode = new AgentNode(
@@ -78,28 +70,40 @@ export class HaveAnotLanggraph {
     You are an expert at crafting problem statements.
 
     Task: 
-    Output a problem statement based on the chat history and the current state of the problem, features and products.
+    Output a problem statement based on the chat history and the previously generated state of the problem, features and products.
     Output nothing if you do not think the problem statement needs to be updated, or if there isn't enough information to generate a problem statement.
 
     Example:
     60% of Singaporeans lack the knowledge of what can be recycled when disposing their trash. This results in them choosing not to recycle because of the additional effort required for research, resulting in low recycling rates.`,
-    false,
   );
   displayedProblemUpdaterNode: DisplayedResponseUpdaterNode;
 
-  featuresAgentNode = new AgentNode(
+  featuresAgentNode = new FeaturesAgentNode(
     getOpenAIModel(),
     'lastGeneratedFeatures',
-    `Just output: I am a features agent.`,
-    false,
+    `Role:
+    You are an expert at suggesting potential features for a solution for some problem statement.
+
+    Task:
+    Suggest a list of potential solution requirements based on the latest problem statement, chat history, and the previously generated state of the problem, features and products.
+    Output nothing if you do not think the solution requirements need to be updated, or if there isn't enough information to generate solution requirements.
+
+    Example:
+    **Data Access**
+    - Provide secure access for staff to view and manage data submitted.
+    - Implement role-based permissions to ensure sensitive information is only accessible to authorized personnel.
+
+    **Real-time Updates**
+    - Develop a dashboard that displays real-time updates on at-risk seniors, including health status, care plans, and any recent interventions.
+    - Ensure that notifications are sent to staff when new data is submitted or when significant changes occur.
+    `,
   );
   displayedFeaturesUpdaterNode: DisplayedResponseUpdaterNode;
 
   productsAgentNode = new AgentNode(
     getOpenAIModel(),
     'lastGeneratedProducts',
-    `Just output: I am a features agent.`,
-    false,
+    `Just output: I am a products agent.`,
   );
   displayedProductsUpdaterNode: DisplayedResponseUpdaterNode;
 
