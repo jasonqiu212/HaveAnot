@@ -1,4 +1,4 @@
-import { Stack, Text } from '@mantine/core';
+import { ScrollArea, Stack, Text } from '@mantine/core';
 import '@mantine/core/styles.css';
 
 import GatherSGLogo from '../../assets/products/gather-sg.png';
@@ -32,26 +32,30 @@ function RecommendedProducts() {
   const recommendedProducts = ['GatherSG', 'Postman'];
 
   return (
-    <Stack gap="24px" pt="32px">
-      <Text c="gray.7">
-        Here's a list of suggested products that we think would address your
-        problem.
-      </Text>
+    <ScrollArea style={{ flexGrow: 1 }} h="100%">
+      <Stack gap="24px" pt="32px">
+        <Text c="gray.7">
+          Here's a list of suggested products that we think would address your
+          problem.
+        </Text>
 
-      {recommendedProducts.map((recommendedProduct: string, index: number) => {
-        const { name, description, logoPath, websiteLink } =
-          products[recommendedProduct];
-        return (
-          <ProductCard
-            key={index}
-            name={name}
-            description={description}
-            logoPath={logoPath}
-            websiteLink={websiteLink}
-          />
-        );
-      })}
-    </Stack>
+        {recommendedProducts.map(
+          (recommendedProduct: string, index: number) => {
+            const { name, description, logoPath, websiteLink } =
+              products[recommendedProduct];
+            return (
+              <ProductCard
+                key={index}
+                name={name}
+                description={description}
+                logoPath={logoPath}
+                websiteLink={websiteLink}
+              />
+            );
+          },
+        )}
+      </Stack>
+    </ScrollArea>
   );
 }
 

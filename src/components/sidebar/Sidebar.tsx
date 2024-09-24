@@ -78,13 +78,13 @@ function Sidebar({ problem, features }: SidebarProps) {
         />
       </Tabs.List>
 
-      <Tabs.Panel value="problem">
+      <Tabs.Panel value="problem" h="100%">
         <ProblemStatement problem={problem} />
       </Tabs.Panel>
-      <Tabs.Panel value="requirements">
+      <Tabs.Panel value="requirements" h="100%">
         <SolutionRequirements features={features} />
       </Tabs.Panel>
-      <Tabs.Panel value="products">
+      <Tabs.Panel value="products" h="100%">
         <RecommendedProducts />
       </Tabs.Panel>
     </Tabs>

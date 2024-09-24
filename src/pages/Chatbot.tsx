@@ -215,7 +215,7 @@ function Chatbot() {
   }, [streamedProducts]);
 
   return (
-    <Group h="100%" wrap="nowrap">
+    <Group h="100%" wrap="nowrap" gap="0px">
       <Stack w="59%" h="100%" p="40px" bg="gray.0" align="center">
         <ChatHistory messages={messages} />
         <ChatInput
