@@ -4,16 +4,19 @@ import '@mantine/core/styles.css';
 interface TabWithIndicatorProps {
   value: string;
   label: string;
-  isIndicatorVisible: boolean;
+  isViewed: boolean;
+  isProcessing: boolean;
 }
 
 function TabWithIndicator({
   value,
   label,
-  isIndicatorVisible,
+  isViewed,
+  isProcessing,
 }: TabWithIndicatorProps) {
+  const isDisabled = !isProcessing && isViewed;
   return (
-    <Indicator color="indigo.6" disabled={!isIndicatorVisible}>
+    <Indicator color="indigo.6" disabled={isDisabled} processing={isProcessing}>
       <Tabs.Tab value={value} c="gray.7">
         {label}
       </Tabs.Tab>

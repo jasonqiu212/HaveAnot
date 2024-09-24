@@ -11,32 +11,34 @@ import SolutionRequirements from './SolutionRequirements';
 interface SidebarProps {
   problem: string | undefined;
   features: string | undefined;
+  isProblemAgentLoading: boolean;
+  isFeaturesAgentLoading: boolean;
+  isProductsAgentLoading: boolean;
 }
 
-function Sidebar({ problem, features }: SidebarProps) {
+function Sidebar({
+  problem,
+  features,
+  isProblemAgentLoading,
+  isFeaturesAgentLoading,
+  isProductsAgentLoading,
+}: SidebarProps) {
   const [activeTab, setActiveTab] = useState<string | null>('problem');
 
-  const [
-    isProblemIndicatorVisible,
-    { open: showProblemIndicator, close: closeProblemIndicator },
-  ] = useDisclosure(true);
-  const [
-    isRequirementsIndicatorVisible,
-    { open: showRequirementsIndicator, close: closeRequirementsIndicator },
-  ] = useDisclosure(true);
-  const [isProductsIndicatorVisible, { close: closeProductsIndicator }] =
-    useDisclosure(true);
+  const [isProblemViewed, setIsProblemViewed] = useState(true);
+  const [areRequirementsViewed, setAreRequirementsViewed] = useState(false);
+  const [areProductsViewed, setAreProductsViewed] = useState(false);
 
   useEffect(() => {
     switch (activeTab) {
       case 'problem':
-        closeProblemIndicator();
+        setIsProblemViewed(true);
         break;
       case 'requirements':
-        closeRequirementsIndicator();
+        setAreRequirementsViewed(true);
         break;
       case 'products':
-        closeProductsIndicator();
+        setAreProductsViewed(true);
         break;
       default:
         break;
@@ -44,11 +46,15 @@ function Sidebar({ problem, features }: SidebarProps) {
   }, [activeTab]);
 
   useEffect(() => {
-    showProblemIndicator();
+    if (activeTab !== 'problem') {
+      setIsProblemViewed(false);
+    }
   }, [problem]);
 
   useEffect(() => {
-    showRequirementsIndicator();
+    if (activeTab !== 'requirements') {
+      setAreRequirementsViewed(false);
+    }
   }, [features]);
 
   return (
@@ -64,17 +70,20 @@ function Sidebar({ problem, features }: SidebarProps) {
         <TabWithIndicator
           value="problem"
           label="Problem"
-          isIndicatorVisible={isProblemIndicatorVisible}
+          isViewed={isProblemViewed}
+          isProcessing={isProblemAgentLoading}
         />
         <TabWithIndicator
           value="requirements"
           label="Requirements"
-          isIndicatorVisible={isRequirementsIndicatorVisible}
+          isViewed={areRequirementsViewed}
+          isProcessing={isFeaturesAgentLoading}
         />
         <TabWithIndicator
           value="products"
           label="Products"
-          isIndicatorVisible={isProductsIndicatorVisible}
+          isViewed={areProductsViewed}
+          isProcessing={isProductsAgentLoading}
         />
       </Tabs.List>
 

@@ -232,7 +232,13 @@ function Chatbot() {
           }
         />
       </Stack>
-      <Sidebar problem={problem} features={features} />
+      <Sidebar
+        problem={problem}
+        features={features}
+        isProblemAgentLoading={isProblemAgentLoading}
+        isFeaturesAgentLoading={isFeaturesAgentLoading}
+        isProductsAgentLoading={isProductsAgentLoading}
+      />
     </Group>
   );
 }
