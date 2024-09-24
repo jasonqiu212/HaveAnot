@@ -1,6 +1,5 @@
 import { Tabs } from '@mantine/core';
 import '@mantine/core/styles.css';
-import { useDisclosure } from '@mantine/hooks';
 import { useEffect, useState } from 'react';
 
 import TabWithIndicator from '../TabWithIndicator';
