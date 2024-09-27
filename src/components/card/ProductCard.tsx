@@ -5,7 +5,7 @@ import { IconArrowUpRight } from '@tabler/icons-react';
 interface ProductCardProps {
   name: string;
   description: string;
-  logoPath: string;
+  logoPath?: string;
   websiteLink: string;
 }
 
@@ -20,7 +20,7 @@ function ProductCard({
       <Stack gap="16px">
         <a href={websiteLink} target="_blank">
           <Group>
-            <img src={logoPath} alt={name} height="24px" />
+            {logoPath && <img src={logoPath} alt={name} height="24px" />}
             <Title order={4} c="gray.9" style={{ flexGrow: 1 }}>
               {name}
             </Title>
