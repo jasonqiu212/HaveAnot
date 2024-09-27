@@ -1,17 +1,18 @@
 import { Alert, Center, Modal, Stack, Text, Title } from '@mantine/core';
 import '@mantine/core/styles.css';
 import { useDisclosure } from '@mantine/hooks';
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { ProblemStatementContext } from '../App';
+import { ProblemStatementContext, ProductMapContext } from '../App';
 // import { AccessControlAgent } from '../agents/AccessControlAgent';
 import ChatInput from '../components/ChatInput';
 
 function Landing() {
   const navigate = useNavigate();
 
-  const [_, setProblemStatement] = useContext(ProblemStatementContext);
+  const [, setProblemStatement] = useContext(ProblemStatementContext);
+  const productMap = useContext(ProductMapContext);
 
   const [isModalOpened, { close: setModalClose }] = useDisclosure(false);
   const [isLoadingAgentResponse, setIsLoadingAgentResponse] = useState(false);
@@ -36,9 +37,14 @@ function Landing() {
   const handleSubmit = () => {
     // accessControlAgent.invoke(inputValue);
     setProblemStatement(inputValue);
-    navigate('chatbot');
     setIsLoadingAgentResponse(true);
   };
+
+  useEffect(() => {
+    if (isLoadingAgentResponse && productMap) {
+      navigate('chatbot');
+    }
+  }, [isLoadingAgentResponse, productMap]);
 
   return (
     <>

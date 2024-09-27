@@ -2,8 +2,9 @@ import { Group, Stack } from '@mantine/core';
 import '@mantine/core/styles.css';
 import { useThrottledState } from '@mantine/hooks';
 import { useContext, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import { ProblemStatementContext } from '../App';
+import { ProblemStatementContext, ProductMapContext } from '../App';
 import ChatHistory from '../components/ChatHistory';
 import ChatInput from '../components/ChatInput';
 import Sidebar from '../components/sidebar/Sidebar';
@@ -26,7 +27,9 @@ export interface Product {
 }
 
 function Chatbot() {
-  const [initProblemStatement, _] = useContext(ProblemStatementContext);
+  const navigate = useNavigate();
+  const [initProblemStatement] = useContext(ProblemStatementContext);
+  const productMap = useContext(ProductMapContext);
 
   // streamedMessage, streamedProblem, streamedFeatures, streamedProducts are set by HaveAnotLanggraph
   // useEffect is used to then stream their values into messages, problem, features, products respectively
@@ -58,10 +61,6 @@ function Chatbot() {
   // const [streamedProducts, setStreamedProducts] = useThrottledState<
   //   string | undefined
   // >(undefined, 20);
-
-  const [productMap, setProductMap] = useState<
-    Record<string, Product> | undefined
-  >();
 
   const [inputValue, setInputValue] = useState('');
   const [isChatAgentLoading, setIsChatAgentLoading] = useState(false);
@@ -117,31 +116,14 @@ function Chatbot() {
     }
   };
 
-  const fetchProductData = async () => {
-    const response = await fetch(
-      'https://script.google.com/macros/s/AKfycbx2Ig7c8HJX-FFG9kFb_NNA046JeytcnX4f3hWxoWzvaNw6UgS0V4j8e7fJlOtRtXHedg/exec',
-    );
-    return response.json().then((data) => {
-      console.log('Products from Google Sheet:', data);
-      const productMap: Record<string, Product> = {};
-      for (const product of data) {
-        productMap[product['Product']] = product;
-      }
-      setProductMap(productMap);
-    });
-  };
-
-  // fetches product data from Google
   useEffect(() => {
-    fetchProductData();
-  }, []);
-
-  // after product data has been fetched, submits the problem statement (set in the context from homepage) as the first message from the user
-  useEffect(() => {
-    if (productMap && initProblemStatement !== null) {
+    if (productMap && initProblemStatement !== undefined) {
       handleSubmit(initProblemStatement);
+    } else {
+      console.log('Product map not loaded yet, or no problem statement');
+      navigate('/');
     }
-  }, [productMap]);
+  }, [productMap, initProblemStatement]);
 
   // Streaming effect for chat message
   useEffect(() => {

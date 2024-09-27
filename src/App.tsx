@@ -1,11 +1,11 @@
 import { AppShell, MantineProvider } from '@mantine/core';
 import '@mantine/core/styles.css';
-import { createContext, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 
 import './App.css';
 import Logo from './assets/logo.svg';
-import Chatbot from './pages/Chatbot';
+import Chatbot, { Product } from './pages/Chatbot';
 import Landing from './pages/Landing';
 
 const router = createBrowserRouter([
@@ -20,13 +20,34 @@ const router = createBrowserRouter([
 ]);
 
 export const ProblemStatementContext = createContext<
-  [string | null, React.Dispatch<React.SetStateAction<string | null>>]
->(['', () => {}]);
+  [string | undefined, React.Dispatch<React.SetStateAction<string | undefined>>]
+>([undefined, () => {}]);
+
+export const ProductMapContext = createContext<
+  Record<string, Product> | undefined
+>(undefined);
 
 function App() {
-  const [problemStatement, setProblemStatement] = useState<string | null>(
-    "A concrete, specific problem statement that does not include the problem's solutions.",
-  );
+  const [productMap, setProductMap] = useState<Record<string, Product>>();
+  const [problemStatement, setProblemStatement] = useState<string>();
+
+  const fetchProductData = async () => {
+    const response = await fetch(
+      'https://script.google.com/macros/s/AKfycbx2Ig7c8HJX-FFG9kFb_NNA046JeytcnX4f3hWxoWzvaNw6UgS0V4j8e7fJlOtRtXHedg/exec',
+    );
+    return response.json().then((data) => {
+      console.log('Products from Google Sheet:', data);
+      const productMap: Record<string, Product> = {};
+      for (const product of data) {
+        productMap[product['Product']] = product;
+      }
+      setProductMap(productMap);
+    });
+  };
+
+  useEffect(() => {
+    fetchProductData();
+  }, []);
 
   return (
     <MantineProvider>
@@ -36,13 +57,15 @@ function App() {
             <img src={Logo} className="logo" alt="Logo" />
           </a>
         </AppShell.Header>
-        <ProblemStatementContext.Provider
-          value={[problemStatement, setProblemStatement]}
-        >
-          <AppShell.Main h="calc(100vh - 96px)" w="100%">
-            <RouterProvider router={router} />
-          </AppShell.Main>
-        </ProblemStatementContext.Provider>
+        <ProductMapContext.Provider value={productMap}>
+          <ProblemStatementContext.Provider
+            value={[problemStatement, setProblemStatement]}
+          >
+            <AppShell.Main h="calc(100vh - 96px)" w="100%">
+              <RouterProvider router={router} />
+            </AppShell.Main>
+          </ProblemStatementContext.Provider>
+        </ProductMapContext.Provider>
       </AppShell>
     </MantineProvider>
   );
