@@ -1,36 +1,35 @@
 import { ScrollArea, Stack, Text } from '@mantine/core';
 import '@mantine/core/styles.css';
 
-import GatherSGLogo from '../../assets/products/gather-sg.png';
-import PostmanLogo from '../../assets/products/postman.png';
+import { Product } from '../../pages/Chatbot';
+// import GatherSGLogo from '../../assets/products/gather-sg.png';
+// import PostmanLogo from '../../assets/products/postman.png';
 import ProductCard from '../card/ProductCard';
 
-interface Product {
-  name: string;
-  description: string;
-  logoPath: string;
-  websiteLink: string;
+// const products: { [key: string]: Product } = {
+//   GatherSG: {
+//     name: 'GatherSG',
+//     description:
+//       'Lightweight Whole-of-Government customer relationship management system.',
+//     logoPath: GatherSGLogo,
+//     websiteLink: 'https://gather.gov.sg/',
+//   },
+//   Postman: {
+//     name: 'Postman',
+//     description: 'Secure, multichannel tool to send official communications.',
+//     logoPath: PostmanLogo,
+//     websiteLink: 'https://postman.gov.sg/',
+//   },
+// };
+
+interface RecommendedProductsProps {
+  productMap: Record<string, Product> | undefined;
+  recommendedProducts: string[] | undefined;
 }
-
-const products: { [key: string]: Product } = {
-  GatherSG: {
-    name: 'GatherSG',
-    description:
-      'Lightweight Whole-of-Government customer relationship management system.',
-    logoPath: GatherSGLogo,
-    websiteLink: 'https://gather.gov.sg/',
-  },
-  Postman: {
-    name: 'Postman',
-    description: 'Secure, multichannel tool to send official communications.',
-    logoPath: PostmanLogo,
-    websiteLink: 'https://postman.gov.sg/',
-  },
-};
-
-function RecommendedProducts() {
-  const recommendedProducts = ['GatherSG', 'Postman'];
-
+function RecommendedProducts({
+  productMap,
+  recommendedProducts,
+}: RecommendedProductsProps) {
   return (
     <ScrollArea style={{ flexGrow: 1 }} h="100%">
       <Stack gap="24px" pt="32px">
@@ -39,19 +38,28 @@ function RecommendedProducts() {
           problem.
         </Text>
 
-        {recommendedProducts.map(
+        {recommendedProducts?.map(
           (recommendedProduct: string, index: number) => {
-            const { name, description, logoPath, websiteLink } =
-              products[recommendedProduct];
-            return (
-              <ProductCard
-                key={index}
-                name={name}
-                description={description}
-                logoPath={logoPath}
-                websiteLink={websiteLink}
-              />
-            );
+            if (
+              productMap &&
+              recommendedProduct &&
+              recommendedProduct in productMap
+            ) {
+              const {
+                Product: name,
+                'Short description': description,
+                Website: websiteLink,
+              } = productMap[recommendedProduct];
+              return (
+                <ProductCard
+                  key={index}
+                  name={name}
+                  description={description}
+                  // logoPath={logoPath}
+                  websiteLink={websiteLink}
+                />
+              );
+            }
           },
         )}
       </Stack>

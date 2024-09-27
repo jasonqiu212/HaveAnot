@@ -1,5 +1,9 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
-import { AzureChatOpenAI, ChatOpenAI } from '@langchain/openai';
+import {
+  AzureChatOpenAI,
+  ChatOpenAI,
+  OpenAIEmbeddings,
+} from '@langchain/openai';
 
 export const getOpenAIModel = (temperature: number = 1) =>
   new ChatOpenAI({
@@ -12,6 +16,12 @@ export const getOpenAIModelWithTools = (
   tools: DynamicStructuredTool<any>[],
   temperature: number,
 ) => getOpenAIModel(temperature).bindTools(tools);
+
+export const getOpenAIEmbeddings = () =>
+  new OpenAIEmbeddings({
+    openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY as string,
+    model: 'text-embedding-3-large',
+  });
 
 export const getAzureOpenAIModel = () =>
   new AzureChatOpenAI({

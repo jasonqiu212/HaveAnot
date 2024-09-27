@@ -14,6 +14,17 @@ export interface Message {
   text: string;
 }
 
+export interface Product {
+  Organisation: string;
+  Category: string;
+  Product: string;
+  'Short description': string;
+  Website: string;
+  'Non-public facing': string;
+  'Get started through': string;
+  'Get started link': string;
+}
+
 function Chatbot() {
   const [initProblemStatement, _] = useContext(ProblemStatementContext);
 
@@ -43,11 +54,14 @@ function Chatbot() {
     NodeJS.Timeout | undefined
   >();
 
-  // TODO: this needs to be a list of products
-  const [products, setProducts] = useState<string | undefined>();
-  const [streamedProducts, setStreamedProducts] = useThrottledState<
-    string | undefined
-  >(undefined, 20);
+  const [products, setProducts] = useState<string[] | undefined>();
+  // const [streamedProducts, setStreamedProducts] = useThrottledState<
+  //   string | undefined
+  // >(undefined, 20);
+
+  const [productMap, setProductMap] = useState<
+    Record<string, Product> | undefined
+  >();
 
   const [inputValue, setInputValue] = useState('');
   const [isChatAgentLoading, setIsChatAgentLoading] = useState(false);
@@ -59,7 +73,7 @@ function Chatbot() {
     return {
       problem: streamedProblem ?? problem,
       features: streamedFeatures ?? features,
-      products: streamedProducts ?? products,
+      products: products,
     };
   };
 
@@ -69,9 +83,13 @@ function Chatbot() {
         setStreamedMessage,
         setStreamedProblem,
         setStreamedFeatures,
-        setStreamedProducts,
+        (products: string[]) => {
+          setProducts(products);
+          setIsProductsAgentLoading(false);
+        },
+        productMap,
       ),
-    [],
+    [productMap],
   );
 
   const handleSubmit = async (message: string = inputValue) => {
@@ -99,12 +117,31 @@ function Chatbot() {
     }
   };
 
-  // submits the problem statement (set in the context from homepage) as the first message from the user
+  const fetchProductData = async () => {
+    const response = await fetch(
+      'https://script.google.com/macros/s/AKfycbx2Ig7c8HJX-FFG9kFb_NNA046JeytcnX4f3hWxoWzvaNw6UgS0V4j8e7fJlOtRtXHedg/exec',
+    );
+    return response.json().then((data) => {
+      console.log('Products from Google Sheet:', data);
+      const productMap: Record<string, Product> = {};
+      for (const product of data) {
+        productMap[product['Product']] = product;
+      }
+      setProductMap(productMap);
+    });
+  };
+
+  // fetches product data from Google
   useEffect(() => {
-    if (initProblemStatement !== null) {
+    fetchProductData();
+  }, []);
+
+  // after product data has been fetched, submits the problem statement (set in the context from homepage) as the first message from the user
+  useEffect(() => {
+    if (productMap && initProblemStatement !== null) {
       handleSubmit(initProblemStatement);
     }
-  }, []);
+  }, [productMap]);
 
   // Streaming effect for chat message
   useEffect(() => {
@@ -203,16 +240,16 @@ function Chatbot() {
     setStreamingFeaturesInterval(interval);
   }, [streamedFeatures]);
 
-  // TODO: If no need streaming effect, can replace streamedProducts with products
-  useEffect(() => {
-    if (streamedProducts === undefined) {
-      return;
-    }
+  // // TODO: If no need streaming effect, can replace streamedProducts with products
+  // useEffect(() => {
+  //   if (streamedProducts === undefined) {
+  //     return;
+  //   }
 
-    setProducts(streamedProducts);
-    setStreamedProducts(undefined);
-    setIsProductsAgentLoading(false);
-  }, [streamedProducts]);
+  //   setProducts(streamedProducts);
+  //   setStreamedProducts(undefined);
+  //   setIsProductsAgentLoading(false);
+  // }, [streamedProducts]);
 
   return (
     <Group h="100%" wrap="nowrap" gap="0px">
@@ -235,6 +272,8 @@ function Chatbot() {
       <Sidebar
         problem={problem}
         features={features}
+        products={products}
+        productMap={productMap}
         isProblemAgentLoading={isProblemAgentLoading}
         isFeaturesAgentLoading={isFeaturesAgentLoading}
         isProductsAgentLoading={isProductsAgentLoading}

@@ -1,15 +1,13 @@
 import { GeneratedStateKey, StateSchema } from '../Langgraph';
 
-export class DisplayedResponseUpdaterNode {
-  prevAgentGenerationStateKey: GeneratedStateKey;
-  updateDisplayedResponse: (
-    stateValue: (typeof StateSchema.State)[GeneratedStateKey],
-  ) => void;
+export class DisplayedResponseUpdaterNode<K extends GeneratedStateKey> {
+  prevAgentGenerationStateKey: K;
+  updateDisplayedResponse: (stateValue: (typeof StateSchema.State)[K]) => void;
 
   constructor(
-    prevAgentGenerationStateKey: GeneratedStateKey,
+    prevAgentGenerationStateKey: K,
     updateDisplayedResponse: (
-      stateValue: (typeof StateSchema.State)[GeneratedStateKey],
+      stateValue: (typeof StateSchema.State)[K],
     ) => void,
   ) {
     this.prevAgentGenerationStateKey = prevAgentGenerationStateKey;

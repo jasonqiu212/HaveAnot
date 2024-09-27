@@ -1,3 +1,4 @@
+import { Document } from '@langchain/core/documents';
 import { AIMessage, BaseMessage, HumanMessage } from '@langchain/core/messages';
 import {
   Annotation,
@@ -7,11 +8,13 @@ import {
   StateGraph,
 } from '@langchain/langgraph/web';
 
+import { Product } from '../pages/Chatbot';
 import { getOpenAIModel } from './Utils';
 import { AgentNode } from './node/AgentNode';
 import { ChatAgentNode } from './node/ChatAgentNode';
 import { DisplayedResponseUpdaterNode } from './node/DisplayedResponseUpdaterNode';
 import { FeaturesAgentNode } from './node/FeaturesAgentNode';
+import { ProductsAgentNode } from './node/ProductsAgentNode';
 
 export type GeneratedStateKey =
   | 'lastGeneratedChat'
@@ -24,7 +27,7 @@ export type GeneratedStateKey =
 export interface DisplayedResponses {
   problem?: string;
   features?: string;
-  products?: string;
+  products?: string[];
 }
 
 export const StateSchema = Annotation.Root({
@@ -46,7 +49,8 @@ export const StateSchema = Annotation.Root({
   lastGeneratedChat: Annotation<AIMessage | undefined>,
   lastGeneratedProblem: Annotation<AIMessage | undefined>,
   lastGeneratedFeatures: Annotation<AIMessage | undefined>,
-  lastGeneratedProducts: Annotation<AIMessage | undefined>,
+
+  lastGeneratedProducts: Annotation<string[] | undefined>,
 });
 
 export class HaveAnotLanggraph {
@@ -54,14 +58,15 @@ export class HaveAnotLanggraph {
     getOpenAIModel(),
     'lastGeneratedChat',
     `Role: 
-    You are a chat agent that matches the length of the response to the user's message. 
+    You are an expert chat agent that matches the length of the response to the user's message. 
     
     Task: 
     Chat with the user to understand their problem statement, and prompt them to provide more details if necessary to formulate a good problem statement.
+    Keep your responses concise, and use bullet points if there are multiple questions. Limit questions to a maximum of 2.
     If you are asked to update the problem, features or products, respond that this has been done, with the assumption that will be done automatically for you.
     Take both the chat history and the current state of the problem, features and products into account when responding.`,
   );
-  displayedChatUpdaterNode: DisplayedResponseUpdaterNode;
+  displayedChatUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedChat'>;
 
   problemAgentNode = new AgentNode(
     getOpenAIModel(),
@@ -76,7 +81,7 @@ export class HaveAnotLanggraph {
     Example:
     60% of Singaporeans lack the knowledge of what can be recycled when disposing their trash. This results in them choosing not to recycle because of the additional effort required for research, resulting in low recycling rates.`,
   );
-  displayedProblemUpdaterNode: DisplayedResponseUpdaterNode;
+  displayedProblemUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedProblem'>;
 
   featuresAgentNode = new FeaturesAgentNode(
     getOpenAIModel(),
@@ -98,19 +103,18 @@ export class HaveAnotLanggraph {
     - Ensure that notifications are sent to staff when new data is submitted or when significant changes occur.
     `,
   );
-  displayedFeaturesUpdaterNode: DisplayedResponseUpdaterNode;
+  displayedFeaturesUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedFeatures'>;
 
-  productsAgentNode = new AgentNode(
-    getOpenAIModel(),
-    'lastGeneratedProducts',
-    `Just output: I am a products agent.`,
-  );
-  displayedProductsUpdaterNode: DisplayedResponseUpdaterNode;
+  productsAgentNode: ProductsAgentNode;
+  displayedProductsUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedProducts'>;
 
   setDisplayedChat: (chat: string) => void;
   setDisplayedProblem?: (problem: string) => void;
   setDisplayedFeatures?: (features: string) => void;
-  setDisplayedProducts?: (products: string) => void;
+  setDisplayedProducts?: (products: string[]) => void;
+
+  productMap: Record<string, Product>;
+  productDocs: Document[] = [];
 
   app: CompiledStateGraph<any, any, any, StateDefinition>;
 
@@ -118,12 +122,26 @@ export class HaveAnotLanggraph {
     setDisplayedChat: (chat: string) => void,
     setDisplayedProblem: (problem: string) => void,
     setDisplayedFeatures: (features: string) => void,
-    setDisplayedProducts: (products: string) => void,
+    setDisplayedProducts: (products: string[]) => void,
+    productMap?: Record<string, Product>,
   ) {
     this.setDisplayedChat = setDisplayedChat;
     this.setDisplayedProblem = setDisplayedProblem;
     this.setDisplayedFeatures = setDisplayedFeatures;
     this.setDisplayedProducts = setDisplayedProducts;
+
+    this.productMap = productMap ?? {};
+    for (const [name, product] of Object.entries(this.productMap)) {
+      if (!product['Short description']) {
+        continue;
+      }
+      this.productDocs.push(
+        new Document({
+          pageContent: product['Short description'],
+          metadata: { name },
+        }),
+      );
+    }
 
     this.displayedChatUpdaterNode = new DisplayedResponseUpdaterNode(
       'lastGeneratedChat',
@@ -152,12 +170,26 @@ export class HaveAnotLanggraph {
         }
       },
     );
+    // system prompt inspired from quickstart (https: //langchain-ai.github.io/langgraphjs/tutorials/rag/langgraph_adaptive_rag_local/?h=rag#answer-grader)
+    this.productsAgentNode = new ProductsAgentNode(
+      getOpenAIModel(),
+      'lastGeneratedProducts',
+      `Role:
+      You are an expert at writing prompts optimised for vector store retrieval, where the vector store contains product descriptions. The vector store uses OpenAI's text-embedding-3-large.
+
+      Task:
+      Write a list of prompts (one prompt on each line) to be used for vector store retrieval based on the latest problem statement, features, chat history, and the previously generated state of the problem, features and products.
+      These will be used to suggest products to the user based on the problem statement and features.
+      Output nothing if you think there isn't enough information to recommend products.
+      Respond only with the list. Do not include any preamble or explanation`,
+      this.productDocs,
+      this.productMap,
+    );
     this.displayedProductsUpdaterNode = new DisplayedResponseUpdaterNode(
       'lastGeneratedProducts',
       (stateValue) => {
-        const messageStr = stateValue?.content.toString();
-        if (messageStr) {
-          setDisplayedProducts(messageStr);
+        if (stateValue && stateValue.length > 0) {
+          setDisplayedProducts(stateValue);
         }
       },
     );

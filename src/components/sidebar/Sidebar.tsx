@@ -2,6 +2,7 @@ import { Tabs } from '@mantine/core';
 import '@mantine/core/styles.css';
 import { useEffect, useState } from 'react';
 
+import { Product } from '../../pages/Chatbot';
 import TabWithIndicator from '../TabWithIndicator';
 import ProblemStatement from './ProblemStatement';
 import RecommendedProducts from './RecommendedProducts';
@@ -10,6 +11,8 @@ import SolutionRequirements from './SolutionRequirements';
 interface SidebarProps {
   problem: string | undefined;
   features: string | undefined;
+  products: string[] | undefined;
+  productMap: Record<string, Product> | undefined;
   isProblemAgentLoading: boolean;
   isFeaturesAgentLoading: boolean;
   isProductsAgentLoading: boolean;
@@ -18,6 +21,8 @@ interface SidebarProps {
 function Sidebar({
   problem,
   features,
+  products,
+  productMap,
   isProblemAgentLoading,
   isFeaturesAgentLoading,
   isProductsAgentLoading,
@@ -56,6 +61,12 @@ function Sidebar({
     }
   }, [features]);
 
+  useEffect(() => {
+    if (activeTab !== 'products') {
+      setAreProductsViewed(false);
+    }
+  }, [products]);
+
   return (
     <Tabs
       value={activeTab}
@@ -93,7 +104,10 @@ function Sidebar({
         <SolutionRequirements features={features} />
       </Tabs.Panel>
       <Tabs.Panel value="products" h="100%">
-        <RecommendedProducts />
+        <RecommendedProducts
+          productMap={productMap}
+          recommendedProducts={products}
+        />
       </Tabs.Panel>
     </Tabs>
   );
