@@ -130,7 +130,9 @@ export class ProductsAgentNode extends AgentNode {
       You are an expert at suggesting products based on the problem statement and solution features.
 
       Task:
-      Select relevant products from the list of products that you are 100% sure is relevant to the problem statement and solution features.
+      Select relevant products from the list of products that you are 100% sure is relevant to the problem statement and solution features. 
+      Take into the account the chat history, the current state of the problem, features and products into account when responding.
+      Only remove previously recommended products if you are 100% sure they are not relevant.
       Output nothing if you think none of the products are relevant.
       Respond only with the list. Do not include any preamble or explanation
 
@@ -167,7 +169,27 @@ export class ProductsAgentNode extends AgentNode {
       .map((line) => line.trim().replace(/^-+|-+$/g, ''));
     console.log('Suggested products response:', suggestedProducts);
 
-    return { [this.stateKey]: suggestedProducts };
+    // additional parsing to reduce chances that suggestedProducts don't match the productMap
+    const filteredSuggestedProducts: string[] = [];
+    suggestedProducts.forEach((str) => {
+      // split by comma and trim whitespace
+      const suggestedProductArr = str.split(',').map((s) => s.trim());
+
+      suggestedProductArr.forEach((suggestedProduct) => {
+        let product: string | undefined;
+        if (!(suggestedProduct in this.productMap)) {
+          product = Object.keys(this.productMap).find((product) =>
+            suggestedProduct.toLowerCase().includes(product.toLowerCase()),
+          );
+        } else {
+          product = suggestedProduct;
+        }
+        product ? filteredSuggestedProducts.push(product) : undefined;
+      });
+    });
+    console.log('Filtered suggested products:', filteredSuggestedProducts);
+
+    return { [this.stateKey]: filteredSuggestedProducts };
 
     // const systemMessage = this.getSystemMessage(state);
 

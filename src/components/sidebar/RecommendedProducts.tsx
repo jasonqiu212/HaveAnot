@@ -33,13 +33,13 @@ function RecommendedProducts({
   isWaitingForUpdate,
 }: RecommendedProductsProps) {
   return (
-    <ScrollArea style={{ flexGrow: 1 }} h="100%">
+    <ScrollArea h="100%">
       <Box pt="32px">
         <Text c="gray.7">
           Here's a list of suggested products that we think would address your
           problem.
         </Text>
-        <Stack gap="24px" mt="24px" w="100%" mih="100%" pos="relative">
+        <Stack gap="24px" mt="24px" w="100%" mih="30vh" pos="relative">
           <LoadingOverlay
             visible={isWaitingForUpdate}
             loaderProps={{ size: 'sm', color: 'indigo.5' }}
@@ -69,6 +69,7 @@ function RecommendedProducts({
               }
             },
           )}
+          <Box style={{ flexGrow: 1 }} />
         </Stack>
       </Box>
     </ScrollArea>

@@ -76,7 +76,7 @@ export class HaveAnotLanggraph {
 
     Task: 
     Output a problem statement based on the chat history and the previously generated state of the problem, features and products.
-    Output nothing if you do not think the problem statement needs to be updated, or if there isn't enough information to generate a problem statement.
+    Output the previous problem statement if you do not think the problem statement needs to be updated.
 
     Example:
     60% of Singaporeans lack the knowledge of what can be recycled when disposing their trash. This results in them choosing not to recycle because of the additional effort required for research, resulting in low recycling rates.`,
@@ -111,7 +111,7 @@ export class HaveAnotLanggraph {
   setDisplayedChat: (chat: string) => void;
   setDisplayedProblem?: (problem: string) => void;
   setDisplayedFeatures?: (features: string) => void;
-  setDisplayedProducts?: (products: string[]) => void;
+  setDisplayedProducts?: (products?: string[]) => void;
 
   productMap: Record<string, Product>;
   productDocs: Document[] = [];
@@ -122,7 +122,7 @@ export class HaveAnotLanggraph {
     setDisplayedChat: (chat: string) => void,
     setDisplayedProblem: (problem: string) => void,
     setDisplayedFeatures: (features: string) => void,
-    setDisplayedProducts: (products: string[]) => void,
+    setDisplayedProducts: (products?: string[]) => void,
     productMap?: Record<string, Product>,
   ) {
     this.setDisplayedChat = setDisplayedChat;
@@ -172,13 +172,13 @@ export class HaveAnotLanggraph {
     );
     // system prompt inspired from quickstart (https: //langchain-ai.github.io/langgraphjs/tutorials/rag/langgraph_adaptive_rag_local/?h=rag#answer-grader)
     this.productsAgentNode = new ProductsAgentNode(
-      getOpenAIModel(),
+      getOpenAIModel(0),
       'lastGeneratedProducts',
       `Role:
       You are an expert at writing prompts optimised for vector store retrieval, where the vector store contains product descriptions. The vector store uses OpenAI's text-embedding-3-large.
 
       Task:
-      Write a list of prompts (one prompt on each line) to be used for vector store retrieval based on the latest problem statement, features, chat history, and the previously generated state of the problem, features and products.
+      Write a list of prompts (one prompt on each line, maximum of 5) to be used for vector store retrieval based on the latest problem statement, features, chat history, and the previously generated state of the problem, features and products.
       These will be used to suggest products to the user based on the problem statement and features.
       Output nothing if you think there isn't enough information to recommend products.
       Respond only with the list. Do not include any preamble or explanation`,
@@ -200,9 +200,9 @@ export class HaveAnotLanggraph {
     this.displayedProductsUpdaterNode = new DisplayedResponseUpdaterNode(
       'lastGeneratedProducts',
       (stateValue) => {
-        if (stateValue && stateValue.length > 0) {
-          setDisplayedProducts(stateValue);
-        }
+        // if (stateValue && stateValue.length > 0) {
+        setDisplayedProducts(stateValue);
+        // }
       },
     );
 

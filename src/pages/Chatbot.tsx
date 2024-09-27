@@ -83,8 +83,8 @@ function Chatbot() {
         setStreamedMessage,
         setStreamedProblem,
         setStreamedFeatures,
-        (products: string[]) => {
-          setProducts(products);
+        (products?: string[]) => {
+          products ? setProducts(products) : undefined;
           setIsProductsAgentLoading(false);
         },
         productMap,
