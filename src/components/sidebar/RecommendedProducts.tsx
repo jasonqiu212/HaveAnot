@@ -1,4 +1,4 @@
-import { ScrollArea, Stack, Text } from '@mantine/core';
+import { Box, LoadingOverlay, ScrollArea, Stack, Text } from '@mantine/core';
 import '@mantine/core/styles.css';
 
 import { Product } from '../../pages/Chatbot';
@@ -25,10 +25,12 @@ import ProductCard from '../card/ProductCard';
 interface RecommendedProductsProps {
   productMap: Record<string, Product> | undefined;
   recommendedProducts: string[] | undefined;
+  isWaitingForUpdate: boolean;
 }
 function RecommendedProducts({
   productMap,
   recommendedProducts,
+  isWaitingForUpdate,
 }: RecommendedProductsProps) {
   return (
     <ScrollArea style={{ flexGrow: 1 }} h="100%">
@@ -37,31 +39,37 @@ function RecommendedProducts({
           Here's a list of suggested products that we think would address your
           problem.
         </Text>
-
-        {recommendedProducts?.map(
-          (recommendedProduct: string, index: number) => {
-            if (
-              productMap &&
-              recommendedProduct &&
-              recommendedProduct in productMap
-            ) {
-              const {
-                Product: name,
-                'Short description': description,
-                Website: websiteLink,
-              } = productMap[recommendedProduct];
-              return (
-                <ProductCard
-                  key={index}
-                  name={name}
-                  description={description}
-                  // logoPath={logoPath}
-                  websiteLink={websiteLink}
-                />
-              );
-            }
-          },
-        )}
+        <Box w="100%" mih="100%">
+          <LoadingOverlay
+            visible={isWaitingForUpdate}
+            loaderProps={{ size: 'sm', color: 'indigo.5' }}
+            opacity="60%"
+          />
+          {recommendedProducts?.map(
+            (recommendedProduct: string, index: number) => {
+              if (
+                productMap &&
+                recommendedProduct &&
+                recommendedProduct in productMap
+              ) {
+                const {
+                  Product: name,
+                  'Short description': description,
+                  Website: websiteLink,
+                } = productMap[recommendedProduct];
+                return (
+                  <ProductCard
+                    key={index}
+                    name={name}
+                    description={description}
+                    // logoPath={logoPath}
+                    websiteLink={websiteLink}
+                  />
+                );
+              }
+            },
+          )}
+        </Box>
       </Stack>
     </ScrollArea>
   );

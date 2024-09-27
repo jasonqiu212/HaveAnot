@@ -274,6 +274,8 @@ function Chatbot() {
         features={features}
         products={products}
         productMap={productMap}
+        isStreamingProblem={streamedProblem !== undefined}
+        isStreamingFeatures={streamedFeatures !== undefined}
         isProblemAgentLoading={isProblemAgentLoading}
         isFeaturesAgentLoading={isFeaturesAgentLoading}
         isProductsAgentLoading={isProductsAgentLoading}

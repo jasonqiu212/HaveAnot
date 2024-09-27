@@ -191,7 +191,7 @@ export class HaveAnotLanggraph {
       `You are an expert at suggesting products based on the problem statement and solution features.
 
       Task:
-      Select relevant products from the list of products that you are 100% sure is relevant to the problem statement and solution features.
+      Select relevant products from the list of products that you are 100% sure is relevant to the problem statement and solution features. Include products that have been recommended by an AI agent in the chat history.
       Output nothing if you think none of the products are relevant.
       Respond only with the list of product names. Do not include any preamble or explanation`,
       this.productDocs,

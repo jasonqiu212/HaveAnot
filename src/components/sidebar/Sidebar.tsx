@@ -13,6 +13,8 @@ interface SidebarProps {
   features: string | undefined;
   products: string[] | undefined;
   productMap: Record<string, Product> | undefined;
+  isStreamingProblem: boolean;
+  isStreamingFeatures: boolean;
   isProblemAgentLoading: boolean;
   isFeaturesAgentLoading: boolean;
   isProductsAgentLoading: boolean;
@@ -23,6 +25,8 @@ function Sidebar({
   features,
   products,
   productMap,
+  isStreamingProblem,
+  isStreamingFeatures,
   isProblemAgentLoading,
   isFeaturesAgentLoading,
   isProductsAgentLoading,
@@ -81,32 +85,40 @@ function Sidebar({
           value="problem"
           label="Problem"
           isViewed={isProblemViewed}
-          isProcessing={isProblemAgentLoading}
+          isProcessing={isStreamingProblem}
         />
         <TabWithIndicator
           value="requirements"
           label="Requirements"
           isViewed={areRequirementsViewed}
-          isProcessing={isFeaturesAgentLoading}
+          isProcessing={isStreamingFeatures}
         />
+        {/* set isViewed and isProcessinng using truth table to hack the logic; basically disable indicator if viewed or waiting for response */}
         <TabWithIndicator
           value="products"
           label="Products"
-          isViewed={areProductsViewed}
-          isProcessing={isProductsAgentLoading}
+          isViewed={isProductsAgentLoading || areProductsViewed}
+          isProcessing={!(isProductsAgentLoading || areProductsViewed)}
         />
       </Tabs.List>
 
       <Tabs.Panel value="problem" h="100%">
-        <ProblemStatement problem={problem} />
+        <ProblemStatement
+          problem={problem}
+          isWaitingForUpdate={isProblemAgentLoading && !isStreamingProblem}
+        />
       </Tabs.Panel>
       <Tabs.Panel value="requirements" h="100%">
-        <SolutionRequirements features={features} />
+        <SolutionRequirements
+          features={features}
+          isWaitingForUpdate={isFeaturesAgentLoading && !isStreamingFeatures}
+        />
       </Tabs.Panel>
       <Tabs.Panel value="products" h="100%">
         <RecommendedProducts
           productMap={productMap}
           recommendedProducts={products}
+          isWaitingForUpdate={isProductsAgentLoading}
         />
       </Tabs.Panel>
     </Tabs>
