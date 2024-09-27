@@ -171,32 +171,32 @@ export class HaveAnotLanggraph {
       },
     );
     // system prompt inspired from quickstart (https: //langchain-ai.github.io/langgraphjs/tutorials/rag/langgraph_adaptive_rag_local/?h=rag#answer-grader)
-    // this.productsAgentNode = new ProductsAgentNode(
-    //   getOpenAIModel(),
-    //   'lastGeneratedProducts',
-    //   `Role:
-    //   You are an expert at writing prompts optimised for vector store retrieval, where the vector store contains product descriptions. The vector store uses OpenAI's text-embedding-3-large.
-
-    //   Task:
-    //   Write a list of prompts (one prompt on each line) to be used for vector store retrieval based on the latest problem statement, features, chat history, and the previously generated state of the problem, features and products.
-    //   These will be used to suggest products to the user based on the problem statement and features.
-    //   Output nothing if you think there isn't enough information to recommend products.
-    //   Respond only with the list. Do not include any preamble or explanation`,
-    //   this.productDocs,
-    //   this.productMap,
-    // );
     this.productsAgentNode = new ProductsAgentNode(
       getOpenAIModel(),
       'lastGeneratedProducts',
-      `You are an expert at suggesting products based on the problem statement and solution features.
+      `Role:
+      You are an expert at writing prompts optimised for vector store retrieval, where the vector store contains product descriptions. The vector store uses OpenAI's text-embedding-3-large.
 
       Task:
-      Select relevant products from the list of products that you are 100% sure is relevant to the problem statement and solution features. Include products that have been recommended by an AI agent in the chat history.
-      Output nothing if you think none of the products are relevant.
-      Respond only with the list of product names. Do not include any preamble or explanation`,
+      Write a list of prompts (one prompt on each line) to be used for vector store retrieval based on the latest problem statement, features, chat history, and the previously generated state of the problem, features and products.
+      These will be used to suggest products to the user based on the problem statement and features.
+      Output nothing if you think there isn't enough information to recommend products.
+      Respond only with the list. Do not include any preamble or explanation`,
       this.productDocs,
       this.productMap,
     );
+    // this.productsAgentNode = new ProductsAgentNode(
+    //   getOpenAIModel(),
+    //   'lastGeneratedProducts',
+    //   `You are an expert at suggesting products based on the problem statement and solution features.
+
+    //   Task:
+    //   Select relevant products from the list of products that you are 100% sure is relevant to the problem statement and solution features. Include products that have been recommended by an AI agent in the chat history.
+    //   Output nothing if you think none of the products are relevant.
+    //   Respond only with the list of product names. Do not include any preamble or explanation`,
+    //   this.productDocs,
+    //   this.productMap,
+    // );
     this.displayedProductsUpdaterNode = new DisplayedResponseUpdaterNode(
       'lastGeneratedProducts',
       (stateValue) => {
