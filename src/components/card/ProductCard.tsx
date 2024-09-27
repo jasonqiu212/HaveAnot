@@ -13,6 +13,7 @@ interface ProductCardProps {
 function ProductCard({ name, description, websiteLink }: ProductCardProps) {
   // TODO: Temporary fix
   const [logo, setLogo] = useState<any>();
+
   import(`../../assets/products/${name}.png`).then((image) => {
     setLogo(image.default);
   });
