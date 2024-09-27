@@ -77,6 +77,7 @@ export class HaveAnotLanggraph {
     Task: 
     Output a problem statement based on the chat history and the previously generated state of the problem, features and products.
     Output the previous problem statement if you do not think the problem statement needs to be updated.
+    Respond only with the problem statement. Do not include any preamble or explanation or the features of the solution or the products.
 
     Example:
     60% of Singaporeans lack the knowledge of what can be recycled when disposing their trash. This results in them choosing not to recycle because of the additional effort required for research, resulting in low recycling rates.`,
