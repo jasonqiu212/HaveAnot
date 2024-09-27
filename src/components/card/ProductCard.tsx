@@ -9,18 +9,16 @@ interface ProductCardProps {
   websiteLink: string;
 }
 
-function ProductCard({
-  name,
-  description,
-  logoPath,
-  websiteLink,
-}: ProductCardProps) {
+function ProductCard({ name, description, websiteLink }: ProductCardProps) {
+  const logoPath = `src/assets/products/${name}.png`;
+
   return (
     <Paper p="24px" bg="indigo.0" radius="md">
       <Stack gap="16px">
         <a href={websiteLink} target="_blank">
           <Group>
-            {logoPath && <img src={logoPath} alt={name} height="24px" />}
+            {/* {logoPath && <img src={logoPath} alt={name} height="24px" />} */}
+            <img src={logoPath} alt={name} height="24px" />
             <Title order={4} c="gray.9" style={{ flexGrow: 1 }}>
               {name}
             </Title>
