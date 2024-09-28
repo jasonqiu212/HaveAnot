@@ -34,8 +34,8 @@ function Sidebar({
   const [activeTab, setActiveTab] = useState<string | null>('problem');
 
   const [isProblemViewed, setIsProblemViewed] = useState(true);
-  const [areRequirementsViewed, setAreRequirementsViewed] = useState(false);
-  const [areProductsViewed, setAreProductsViewed] = useState(false);
+  const [areRequirementsViewed, setAreRequirementsViewed] = useState(true);
+  const [areProductsViewed, setAreProductsViewed] = useState(true);
 
   useEffect(() => {
     switch (activeTab) {
@@ -54,19 +54,19 @@ function Sidebar({
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab !== 'problem') {
+    if (problem && activeTab !== 'problem') {
       setIsProblemViewed(false);
     }
   }, [problem]);
 
   useEffect(() => {
-    if (activeTab !== 'requirements') {
+    if (features && activeTab !== 'requirements') {
       setAreRequirementsViewed(false);
     }
   }, [features]);
 
   useEffect(() => {
-    if (activeTab !== 'products') {
+    if (products && activeTab !== 'products') {
       setAreProductsViewed(false);
     }
   }, [products]);
