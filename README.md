@@ -1,10 +1,12 @@
 # have anot?
 
+![have anot?](docs/have-anot.png)
+
 ## Overview
 
-[have anot?](https://have-anot.vercel.app/) is an AI-powered chatbot that allows users to describe their problem and discover government products that they can use to build a solution. By understanding the user's pain points and solution requirements, the chatbot recommends a suite of products that can solve the problem, along with the solution architecture and estimated cost.
+[have anot?](https://have-anot.vercel.app/) is an AI-powered chatbot that assists users in effectively scoping their problems, suggesting features, and recommending existing products for digital solutions. By streamlining the entire process, have anot? enables public officers to minimize the need for completely bespoke systems. This approach helps them save both costs and time, ultimately enhancing their ability to serve citizens more effectively and efficiently.
 
-have anot? was created as part of [Build for Good 2024](https://www.build.gov.sg/).
+have anot? was created as part of [Build for Good 2024](https://www.build.gov.sg/). Feel free to check out our [pitch deck](docs/pitch-deck.pdf)!
 
 Start using [have anot?](https://have-anot.vercel.app/) now!
 
