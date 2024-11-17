@@ -7,20 +7,23 @@ import {
   StateDefinition,
   StateGraph,
 } from '@langchain/langgraph/web';
+import { z } from 'zod';
 
 import { Product } from '../pages/Chatbot';
 import {
   chatAgentPrompt,
   featuresAgentPrompt,
   problemAgentPrompt,
+  problemConstructorAgentPrompt,
   productsAgentPrompt1,
   productsAgentPrompt2,
 } from './Prompts';
-import { getOpenAIModel } from './Utils';
+import { getOpenAIModel, problemConstructorAgentOutputSchema } from './Utils';
 import { ChatAgentNode } from './node/ChatAgentNode';
 import { DisplayedResponseUpdaterNode } from './node/DisplayedResponseUpdaterNode';
 import { FeaturesAgentNode } from './node/FeaturesAgentNode';
 import { ProblemAgentNode } from './node/ProblemAgentNode';
+import { ProblemConstructorAgentNode } from './node/ProblemConstructorAgentNode';
 import { ProductsAgentNode } from './node/ProductsAgentNode';
 
 export type GeneratedStateKey =
@@ -53,6 +56,10 @@ export const StateSchema = Annotation.Root({
   // Updated whenever user submits input
   displayedResponses: Annotation<DisplayedResponses | undefined>,
 
+  problemParts: Annotation<
+    z.infer<typeof problemConstructorAgentOutputSchema> | undefined
+  >,
+
   lastGeneratedChat: Annotation<AIMessage | undefined>,
   lastGeneratedProblem: Annotation<AIMessage | undefined>,
   lastGeneratedFeatures: Annotation<AIMessage | undefined>,
@@ -61,6 +68,17 @@ export const StateSchema = Annotation.Root({
 });
 
 export class HaveAnotLanggraph {
+  problemConstructorAgentNode = new ProblemConstructorAgentNode(
+    getOpenAIModel(0).withStructuredOutput(
+      problemConstructorAgentOutputSchema,
+      {
+        strict: true,
+      },
+    ),
+    'problemParts',
+    problemConstructorAgentPrompt,
+  );
+
   chatAgentNode = new ChatAgentNode(
     getOpenAIModel(),
     'lastGeneratedChat',
@@ -166,6 +184,12 @@ export class HaveAnotLanggraph {
     );
 
     const langgraph = new StateGraph(StateSchema)
+      .addNode(
+        'problemConstructorAgent',
+        this.problemConstructorAgentNode.invoke.bind(
+          this.problemConstructorAgentNode,
+        ),
+      )
       .addNode('chatAgent', this.chatAgentNode.invoke.bind(this.chatAgentNode))
       .addNode(
         'displayedChatUpdater',
@@ -200,7 +224,8 @@ export class HaveAnotLanggraph {
         ),
       )
 
-      .addEdge('__start__', 'chatAgent')
+      .addEdge('__start__', 'problemConstructorAgent')
+      .addEdge('problemConstructorAgent', 'chatAgent')
       .addEdge('chatAgent', 'displayedChatUpdater')
       .addEdge('displayedChatUpdater', 'problemAgent')
       .addEdge('problemAgent', 'displayedProblemUpdater')
