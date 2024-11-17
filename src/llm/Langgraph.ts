@@ -72,11 +72,12 @@ export class HaveAnotLanggraph {
     getOpenAIModel(),
     'lastGeneratedProblem',
     `Role:
-    You are an expert at crafting problem statements.
+    You are an expert at crafting professional problem statements.
 
     Task: 
     Output a problem statement based on the chat history and the previously generated state of the problem, features and products.
     Output the previous problem statement if you do not think the problem statement needs to be updated.
+    Problem statements should be in third person and sound professional.
     Respond only with the problem statement. Do not include any preamble or explanation or the features of the solution or the products.
 
     Example:

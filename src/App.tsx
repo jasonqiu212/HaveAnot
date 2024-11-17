@@ -8,6 +8,11 @@ import Logo from './assets/logo.svg';
 import Chatbot, { Product } from './pages/Chatbot';
 import Landing from './pages/Landing';
 
+// to allow globalThis.mazeUniversalSnippetApiKey in typescript
+declare global {
+  var mazeUniversalSnippetApiKey: string;
+}
+
 const router = createBrowserRouter([
   {
     path: '/',
@@ -47,6 +52,20 @@ function App() {
 
   useEffect(() => {
     fetchProductData();
+
+    if (!window.sessionStorage.getItem('maze-us')) {
+      window.sessionStorage.setItem('maze-us', new Date().getTime().toString());
+    }
+    const mazeScript = document.createElement('script');
+    mazeScript.src = `https://snippet.maze.co/maze-universal-loader.js?apiKey=${import.meta.env.VITE_MAZE_API_KEY}`;
+    mazeScript.async = true;
+    document.head.appendChild(mazeScript);
+    window.mazeUniversalSnippetApiKey = import.meta.env.VITE_MAZE_API_KEY;
+
+    return () => {
+      document.head.removeChild(mazeScript);
+      return;
+    };
   }, []);
 
   return (
