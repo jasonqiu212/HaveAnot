@@ -68,6 +68,12 @@ function Chatbot() {
   const [isFeaturesAgentLoading, setIsFeaturesAgentLoading] = useState(false);
   const [isProductsAgentLoading, setIsProductsAgentLoading] = useState(false);
 
+  const [problemWhoScore, setProblemWhoScore] = useState<number>(0);
+  const [problemWhatScore, setProblemWhatScore] = useState<number>(0);
+  const [problemWhenScore, setProblemWhenScore] = useState<number>(0);
+  const [problemWhereScore, setProblemWhereScore] = useState<number>(0);
+  const [problemWhyScore, setProblemWhyScore] = useState<number>(0);
+
   const getDisplayedResponses = () => {
     return {
       problem: streamedProblem ?? problem,
@@ -253,6 +259,13 @@ function Chatbot() {
       </Stack>
       <Sidebar
         problem={problem}
+        problemScores={{
+          who: problemWhoScore,
+          what: problemWhatScore,
+          where: problemWhereScore,
+          when: problemWhenScore,
+          why: problemWhyScore,
+        }}
         features={features}
         products={products}
         productMap={productMap}

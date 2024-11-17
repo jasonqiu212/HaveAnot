@@ -7,32 +7,33 @@ import TextCard from '../card/TextCard';
 
 interface ProblemStatementProps {
   problem: string | undefined;
+  problemScores: {
+    who: number;
+    what: number;
+    where: number;
+    when: number;
+    why: number;
+  };
   isWaitingForUpdate: boolean;
 }
 
 function ProblemStatement({
   problem,
+  problemScores,
   isWaitingForUpdate,
 }: ProblemStatementProps) {
-  // TODO: Pass in as props
-  const hasWho = true;
-  const hasWhat = true;
-  const hasWhen = false;
-  const hasWhere = true;
-  const hasWhy = false;
+  const progress =
+    Object.values(problemScores).reduce((sum, score) => sum + score, 0) /
+    Object.keys(problemScores).length;
 
-  const progress = [hasWho, hasWhat, hasWhen, hasWhere, hasWhy].filter(
-    Boolean,
-  ).length;
-
-  const getProblemStatementStatus = (percentage: number): string => {
-    if (percentage <= 0.25) {
+  const getProblemStatementStatus = (): string => {
+    if (progress <= 0.25) {
       return 'Getting started... 🚀';
-    } else if (percentage <= 0.5) {
+    } else if (progress <= 0.5) {
       return 'Making progress 🛠️';
-    } else if (percentage <= 0.75) {
+    } else if (progress <= 0.75) {
       return 'Almost there ⏳';
-    } else if (percentage < 1) {
+    } else if (progress < 1) {
       return 'Finishing touches ✨';
     }
     return 'Perfect! ️🎉';
@@ -47,18 +48,27 @@ function ProblemStatement({
               <Stack>
                 <Text c="gray.7">Your problem statement</Text>
                 <Text c="gray.7" fw="bold">
-                  {getProblemStatementStatus(progress / 5)}
+                  {getProblemStatementStatus()}
                 </Text>
-                <Progress color="indigo.6" value={(progress / 5) * 100} />
+                <Progress color="indigo.6" value={progress} />
               </Stack>
             </Accordion.Control>
             <Accordion.Panel>
               <Stack gap="sm">
-                <ChecklistItem isChecked={hasWho} label="Who" />
-                <ChecklistItem isChecked={hasWhat} label="What" />
-                <ChecklistItem isChecked={hasWhen} label="When" />
-                <ChecklistItem isChecked={hasWhere} label="Where" />
-                <ChecklistItem isChecked={hasWhy} label="Why" />
+                <ChecklistItem isChecked={problemScores.who == 1} label="Who" />
+                <ChecklistItem
+                  isChecked={problemScores.what == 1}
+                  label="What"
+                />
+                <ChecklistItem
+                  isChecked={problemScores.when == 1}
+                  label="When"
+                />
+                <ChecklistItem
+                  isChecked={problemScores.where == 1}
+                  label="Where"
+                />
+                <ChecklistItem isChecked={problemScores.why == 1} label="Why" />
               </Stack>
             </Accordion.Panel>
           </Accordion.Item>

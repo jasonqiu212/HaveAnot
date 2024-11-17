@@ -10,6 +10,13 @@ import SolutionRequirements from './SolutionRequirements';
 
 interface SidebarProps {
   problem: string | undefined;
+  problemScores: {
+    who: number;
+    what: number;
+    where: number;
+    when: number;
+    why: number;
+  };
   features: string | undefined;
   products: string[] | undefined;
   productMap: Record<string, Product> | undefined;
@@ -22,6 +29,7 @@ interface SidebarProps {
 
 function Sidebar({
   problem,
+  problemScores,
   features,
   products,
   productMap,
@@ -105,6 +113,7 @@ function Sidebar({
       <Tabs.Panel value="problem" h="100%">
         <ProblemStatement
           problem={problem}
+          problemScores={problemScores}
           isWaitingForUpdate={isProblemAgentLoading && !isStreamingProblem}
         />
       </Tabs.Panel>
