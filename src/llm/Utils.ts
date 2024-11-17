@@ -50,6 +50,9 @@ export const problemConstructorAgentOutputSchema = z
           .describe(
             `The score of the answer to "Who is affected by the problem?"`,
           ),
+        missing: z
+          .string()
+          .describe(`Concretely, what else is necessary for a score of 1`),
       })
       .nullable(),
     what: z
@@ -64,6 +67,9 @@ export const problemConstructorAgentOutputSchema = z
           .describe(
             `The score of the answer to "What are the pain points you’re trying to solve or you currently face?"`,
           ),
+        missing: z
+          .string()
+          .describe(`Concretely, what else is necessary for a score of 1`),
       })
       .nullable(),
     where: z
@@ -76,6 +82,9 @@ export const problemConstructorAgentOutputSchema = z
           .describe(
             `The score of the answer to "Where is the problem occurring?"`,
           ),
+        missing: z
+          .string()
+          .describe(`Concretely, what else is necessary for a score of 1`),
       })
       .nullable(),
     when: z
@@ -88,6 +97,9 @@ export const problemConstructorAgentOutputSchema = z
           .describe(
             `The score of the answer to "When does the problem occur?"`,
           ),
+        missing: z
+          .string()
+          .describe(`Concretely, what else is necessary for a score of 1`),
       })
       .nullable(),
     why: z
@@ -102,6 +114,9 @@ export const problemConstructorAgentOutputSchema = z
           .describe(
             `The score of the answer to "Why is the problem important or worth solving?"`,
           ),
+        missing: z
+          .string()
+          .describe(`Concretely, what else is necessary for a score of 1`),
       })
       .nullable(),
   })
