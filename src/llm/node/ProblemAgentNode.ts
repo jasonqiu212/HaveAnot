@@ -6,30 +6,27 @@ import { ChatOpenAICallOptions } from '@langchain/openai';
 import { StateSchema } from '../Langgraph';
 import { AgentNode } from './AgentNode';
 
-export class FeaturesAgentNode extends AgentNode<'lastGeneratedFeatures'> {
+export class ProblemAgentNode extends AgentNode<'lastGeneratedProblem'> {
   constructor(
     model: Runnable<
       BaseLanguageModelInput,
       AIMessageChunk,
       ChatOpenAICallOptions
     >,
-    stateKey: 'lastGeneratedFeatures',
+    stateKey: 'lastGeneratedProblem',
     systemPrompt: string,
   ) {
     super(model, stateKey, systemPrompt);
+    console.log(this.stateKey);
   }
 
   override getSystemMessage(state: typeof StateSchema.State) {
-    return new SystemMessage(
-      `${this.systemPrompt}
-
-      Here is the latest problem statement:
-      ${state.lastGeneratedProblem ?? '<empty>'}
+    return new SystemMessage(`
+      ${this.systemPrompt}
 
       Here are the previously generated states:
       Problem: ${state.displayedResponses?.problem ?? '<empty>'}
       Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
-      Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`,
-    );
+      Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`);
   }
 }

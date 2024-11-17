@@ -5,13 +5,13 @@ import { ChatOpenAICallOptions } from '@langchain/openai';
 
 import { StateSchema } from '../Langgraph';
 
-export class AgentNode {
+export abstract class AgentNode<K extends keyof typeof StateSchema.State> {
   model: Runnable<
     BaseLanguageModelInput,
     AIMessageChunk,
     ChatOpenAICallOptions
   >;
-  stateKey: string;
+  stateKey: K;
   systemPrompt: string;
 
   constructor(
@@ -20,7 +20,7 @@ export class AgentNode {
       AIMessageChunk,
       ChatOpenAICallOptions
     >,
-    stateKey: string,
+    stateKey: K,
     systemPrompt: string,
   ) {
     this.model = model;
@@ -28,19 +28,16 @@ export class AgentNode {
     this.systemPrompt = systemPrompt;
   }
 
-  getSystemMessage = (state: typeof StateSchema.State) =>
-    new SystemMessage(
-      `${this.systemPrompt}
+  abstract getSystemMessage(state: typeof StateSchema.State): SystemMessage;
 
-      Here are the previously generated states:
-      Problem: ${state.displayedResponses?.problem ?? '<empty>'}
-      Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
-      Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`,
-    );
-
-  invoke = async (
+  // returns a Promise of a partial StateSchema.State object, containing the key of this.stateKey, and optionally containing the rest of the keys
+  async invoke(
     state: typeof StateSchema.State,
-  ): Promise<Partial<typeof StateSchema.State>> => {
+  ): Promise<
+    Pick<typeof StateSchema.State, K> &
+      Partial<Omit<typeof StateSchema.State, K>>
+  > {
+    console.log('agent stateKey in invoke', this.stateKey);
     const systemMessage = this.getSystemMessage(state);
 
     const messages = [
@@ -56,6 +53,7 @@ export class AgentNode {
 
     const response = await this.model.invoke(messages);
 
-    return { [this.stateKey]: response };
-  };
+    return { [this.stateKey]: response } as Pick<typeof StateSchema.State, K> &
+      Partial<Omit<typeof StateSchema.State, K>>;
+  }
 }

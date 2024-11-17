@@ -10,10 +10,10 @@ import {
 
 import { Product } from '../pages/Chatbot';
 import { getOpenAIModel } from './Utils';
-import { AgentNode } from './node/AgentNode';
 import { ChatAgentNode } from './node/ChatAgentNode';
 import { DisplayedResponseUpdaterNode } from './node/DisplayedResponseUpdaterNode';
 import { FeaturesAgentNode } from './node/FeaturesAgentNode';
+import { ProblemAgentNode } from './node/ProblemAgentNode';
 import { ProductsAgentNode } from './node/ProductsAgentNode';
 
 export type GeneratedStateKey =
@@ -62,13 +62,19 @@ export class HaveAnotLanggraph {
     
     Task: 
     Chat with the user to understand their problem statement, and prompt them to provide more details if necessary to formulate a good problem statement.
+    A good problem statement should answer these questions:
+      * Who is affected by the problem?
+      * What are the pain points you’re trying to solve or you currently face?
+      * Where is the problem occurring? For example, is it in a specific department, location, system or platform?
+      * When does the problem occur? For example, the frequency or specific times of the day.
+      * Why is the problem important or worth solving? For example, what is the impact of your problem’s consequences in cost, time, quality, environment, or personal experience?
     Keep your responses concise, and use bullet points if there are multiple questions. Limit questions to a maximum of 2.
     If you are asked to update the problem, features or products, respond that this has been done, with the assumption that will be done automatically for you.
     Take both the chat history and the current state of the problem, features and products into account when responding.`,
   );
   displayedChatUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedChat'>;
 
-  problemAgentNode = new AgentNode(
+  problemAgentNode = new ProblemAgentNode(
     getOpenAIModel(),
     'lastGeneratedProblem',
     `Role:
@@ -80,8 +86,8 @@ export class HaveAnotLanggraph {
     Problem statements should be in third person and sound professional.
     Respond only with the problem statement. Do not include any preamble or explanation or the features of the solution or the products.
 
-    Example:
-    60% of Singaporeans lack the knowledge of what can be recycled when disposing their trash. This results in them choosing not to recycle because of the additional effort required for research, resulting in low recycling rates.`,
+    Problem Statement Format:
+    <Persona/User/Role> **wants** <Action/Activity/Situation> **because** <Aim/Need/Outcome> **but** <Restrictions/Obstacles/Frictions>.`,
   );
   displayedProblemUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedProblem'>;
 
@@ -209,22 +215,38 @@ export class HaveAnotLanggraph {
     );
 
     const langgraph = new StateGraph(StateSchema)
-      .addNode('chatAgent', this.chatAgentNode.invoke)
-      .addNode('displayedChatUpdater', this.displayedChatUpdaterNode.invoke)
-      .addNode('problemAgent', this.problemAgentNode.invoke)
+      .addNode('chatAgent', this.chatAgentNode.invoke.bind(this.chatAgentNode))
+      .addNode(
+        'displayedChatUpdater',
+        this.displayedChatUpdaterNode.invoke.bind(
+          this.displayedChatUpdaterNode,
+        ),
+      )
+      .addNode(
+        'problemAgent',
+        this.problemAgentNode.invoke.bind(this.problemAgentNode),
+      )
       .addNode(
         'displayedProblemUpdater',
         this.displayedProblemUpdaterNode.invoke,
       )
-      .addNode('featuresAgent', this.featuresAgentNode.invoke)
+      .addNode(
+        'featuresAgent',
+        this.featuresAgentNode.invoke.bind(this.featuresAgentNode),
+      )
       .addNode(
         'displayedFeaturesUpdater',
         this.displayedFeaturesUpdaterNode.invoke,
       )
-      .addNode('productsAgent', this.productsAgentNode.invoke)
+      .addNode(
+        'productsAgent',
+        this.productsAgentNode.invoke.bind(this.productsAgentNode),
+      )
       .addNode(
         'displayedProductsUpdater',
-        this.displayedProductsUpdaterNode.invoke,
+        this.displayedProductsUpdaterNode.invoke.bind(
+          this.displayedProductsUpdaterNode,
+        ),
       )
 
       .addEdge('__start__', 'chatAgent')

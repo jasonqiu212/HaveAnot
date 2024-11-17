@@ -11,7 +11,7 @@ import { StateSchema } from '../Langgraph';
 import { getOpenAIEmbeddings } from '../Utils';
 import { AgentNode } from './AgentNode';
 
-export class ProductsAgentNode extends AgentNode {
+export class ProductsAgentNode extends AgentNode<'lastGeneratedProducts'> {
   productDocs: Document[];
   productMap: Record<string, Product>;
   retriever?: VectorStoreRetriever<MemoryVectorStore>;
@@ -22,7 +22,7 @@ export class ProductsAgentNode extends AgentNode {
       AIMessageChunk,
       ChatOpenAICallOptions
     >,
-    stateKey: string,
+    stateKey: 'lastGeneratedProducts',
     systemPrompt: string,
     productDocs: Document[],
     productMap: Record<string, Product>,
@@ -32,8 +32,8 @@ export class ProductsAgentNode extends AgentNode {
     this.productMap = productMap;
   }
 
-  getSystemMessage = (state: typeof StateSchema.State) =>
-    new SystemMessage(
+  getSystemMessage(state: typeof StateSchema.State) {
+    return new SystemMessage(
       `${this.systemPrompt}
 
       Here is the latest problem statement:
@@ -47,6 +47,7 @@ export class ProductsAgentNode extends AgentNode {
       Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
       Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`,
     );
+  }
   // getSystemMessage = (state: typeof StateSchema.State) =>
   //   new SystemMessage(
   //     `${this.systemPrompt}
@@ -70,9 +71,7 @@ export class ProductsAgentNode extends AgentNode {
   //     Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`,
   //   );
 
-  invoke = async (
-    state: typeof StateSchema.State,
-  ): Promise<Partial<typeof StateSchema.State>> => {
+  override async invoke(state: typeof StateSchema.State) {
     if (!this.retriever) {
       const embeddings = getOpenAIEmbeddings();
       const vectorstore = new MemoryVectorStore(embeddings);
@@ -212,5 +211,5 @@ export class ProductsAgentNode extends AgentNode {
     //     .split('\n')
     //     .map((str) => str.trim()),
     // };
-  };
+  }
 }

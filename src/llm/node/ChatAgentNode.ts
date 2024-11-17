@@ -1,40 +1,42 @@
 import { BaseLanguageModelInput } from '@langchain/core/language_models/base';
-import { AIMessageChunk } from '@langchain/core/messages';
+import { AIMessageChunk, SystemMessage } from '@langchain/core/messages';
 import { Runnable } from '@langchain/core/runnables';
 import { ChatOpenAICallOptions } from '@langchain/openai';
 
 import { StateSchema } from '../Langgraph';
 import { AgentNode } from './AgentNode';
 
-export class ChatAgentNode extends AgentNode {
+export class ChatAgentNode extends AgentNode<'lastGeneratedChat'> {
   constructor(
     model: Runnable<
       BaseLanguageModelInput,
       AIMessageChunk,
       ChatOpenAICallOptions
     >,
-    stateKey: string,
+    stateKey: 'lastGeneratedChat',
     systemPrompt: string,
   ) {
     super(model, stateKey, systemPrompt);
+    console;
   }
 
-  invoke = async (state: typeof StateSchema.State) => {
-    const systemMessage = this.getSystemMessage(state);
+  override getSystemMessage(state: typeof StateSchema.State) {
+    return new SystemMessage(`
+      ${this.systemPrompt}
 
-    const messages = [
-      systemMessage,
-      // for all tool messages, set their content field as '' if it is undefined
-      ...(state.chatHistory ?? []).map((message) => {
-        if (message._getType() === 'tool' && message.content === undefined) {
-          message.content = '';
-        }
-        return message;
-      }),
-    ];
+      Here are the previously generated states:
+      Problem: ${state.displayedResponses?.problem ?? '<empty>'}
+      Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
+      Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`);
+  }
 
-    const response = await this.model.invoke(messages);
+  override async invoke(state: typeof StateSchema.State) {
+    const superResponse = await super.invoke(state);
 
-    return { [this.stateKey]: response, chatHistory: [response] };
-  };
+    superResponse.chatHistory =
+      superResponse[this.stateKey] === undefined
+        ? []
+        : [superResponse[this.stateKey]!];
+    return superResponse;
+  }
 }
