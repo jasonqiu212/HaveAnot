@@ -12,6 +12,7 @@ import { getOpenAIEmbeddings } from '../Utils';
 import { AgentNode } from './AgentNode';
 
 export class ProductsAgentNode extends AgentNode<'lastGeneratedProducts'> {
+  systemPrompt2: string;
   productDocs: Document[];
   productMap: Record<string, Product>;
   retriever?: VectorStoreRetriever<MemoryVectorStore>;
@@ -24,19 +25,18 @@ export class ProductsAgentNode extends AgentNode<'lastGeneratedProducts'> {
     >,
     stateKey: 'lastGeneratedProducts',
     systemPrompt: string,
+    systemPrompt2: string,
     productDocs: Document[],
     productMap: Record<string, Product>,
   ) {
     super(model, stateKey, systemPrompt);
+    this.systemPrompt2 = systemPrompt2;
     this.productDocs = productDocs;
     this.productMap = productMap;
   }
 
-  getSystemMessage(state: typeof StateSchema.State) {
-    return new SystemMessage(
-      `${this.systemPrompt}
-
-      Here is the latest problem statement:
+  getCommonSystemMessageString(state: typeof StateSchema.State) {
+    return `Here is the latest problem statement:
       ${state.lastGeneratedProblem ?? '<empty>'}
 
       Here are the latest solution features:
@@ -45,31 +45,30 @@ export class ProductsAgentNode extends AgentNode<'lastGeneratedProducts'> {
       Here are the previously generated states:
       Problem: ${state.displayedResponses?.problem ?? '<empty>'}
       Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
-      Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`,
+      Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`;
+  }
+
+  override getSystemMessage(state: typeof StateSchema.State) {
+    return new SystemMessage(
+      `${this.systemPrompt}
+
+      ${this.getCommonSystemMessageString(state)}`,
     );
   }
-  // getSystemMessage = (state: typeof StateSchema.State) =>
-  //   new SystemMessage(
-  //     `${this.systemPrompt}
 
-  //     Here is the list of products:
-  //     ${Object.entries(this.productMap)
-  //       .map(
-  //         ([product, details]) => `${product}: ${details['Short description']}`,
-  //       )
-  //       .join('\n')}
+  getSystemMessage2(
+    state: typeof StateSchema.State,
+    potentialProducts: string[],
+  ) {
+    return new SystemMessage(
+      `${this.systemPrompt2}
 
-  //     Here is the latest problem statement:
-  //     ${state.lastGeneratedProblem ?? '<empty>'}
+      Here are the potential products to choose from:
+      ${potentialProducts.reduce((acc, product) => `${acc}\n${product}: ${this.productMap[product]['Short description']}`, '')}
 
-  //     Here are the latest solution features:
-  //     ${state.lastGeneratedFeatures ?? '<empty>'}
-
-  //     Here are the previously generated states:
-  //     Problem: ${state.displayedResponses?.problem ?? '<empty>'}
-  //     Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
-  //     Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`,
-  //   );
+      ${this.getCommonSystemMessageString(state)}`,
+    );
+  }
 
   override async invoke(state: typeof StateSchema.State) {
     if (!this.retriever) {
@@ -124,31 +123,7 @@ export class ProductsAgentNode extends AgentNode<'lastGeneratedProducts'> {
       // }
     }
 
-    const systemMessage2 = new SystemMessage(
-      `Role:
-      You are an expert at suggesting products based on the problem statement and solution features.
-
-      Task:
-      Select relevant products from the list of products that you are 100% sure is relevant to the problem statement and solution features. 
-      Take into the account the chat history, the current state of the problem, features and products into account when responding.
-      Only remove previously recommended products if you are 100% sure they are not relevant.
-      Output nothing if you think none of the products are relevant.
-      Respond only with the list. Do not include any preamble or explanation
-
-      Here are the potential products to choose from:
-      ${potentialProducts.reduce((acc, product) => `${acc}\n${product}: ${this.productMap[product]['Short description']}`, '')}
-
-      Here is the latest problem statement:
-      ${state.lastGeneratedProblem ?? '<empty>'}
-
-      Here are the latest solution features:
-      ${state.lastGeneratedFeatures ?? '<empty>'}
-
-      Here are the previously generated states:
-      Problem: ${state.displayedResponses?.problem ?? '<empty>'}
-      Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
-      Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`,
-    );
+    const systemMessage2 = this.getSystemMessage2(state, potentialProducts);
     const messages2 = [
       systemMessage2,
       // for all tool messages, set their content field as '' if it is undefined
@@ -189,27 +164,5 @@ export class ProductsAgentNode extends AgentNode<'lastGeneratedProducts'> {
     console.log('Filtered suggested products:', filteredSuggestedProducts);
 
     return { [this.stateKey]: filteredSuggestedProducts };
-
-    // const systemMessage = this.getSystemMessage(state);
-
-    // const messages = [
-    //   systemMessage,
-    //   // for all tool messages, set their content field as '' if it is undefined
-    //   ...(state.chatHistory ?? []).map((message) => {
-    //     if (message._getType() === 'tool' && message.content === undefined) {
-    //       message.content = '';
-    //     }
-    //     return message;
-    //   }),
-    // ];
-
-    // const response = await this.model.invoke(messages);
-
-    // return {
-    //   [this.stateKey]: response.content
-    //     .toString()
-    //     .split('\n')
-    //     .map((str) => str.trim()),
-    // };
   }
 }

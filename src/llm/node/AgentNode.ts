@@ -37,7 +37,6 @@ export abstract class AgentNode<K extends keyof typeof StateSchema.State> {
     Pick<typeof StateSchema.State, K> &
       Partial<Omit<typeof StateSchema.State, K>>
   > {
-    console.log('agent stateKey in invoke', this.stateKey);
     const systemMessage = this.getSystemMessage(state);
 
     const messages = [
