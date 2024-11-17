@@ -68,11 +68,19 @@ function Chatbot() {
   const [isFeaturesAgentLoading, setIsFeaturesAgentLoading] = useState(false);
   const [isProductsAgentLoading, setIsProductsAgentLoading] = useState(false);
 
-  const [problemWhoScore, setProblemWhoScore] = useState<number>(0);
-  const [problemWhatScore, setProblemWhatScore] = useState<number>(0);
-  const [problemWhenScore, setProblemWhenScore] = useState<number>(0);
-  const [problemWhereScore, setProblemWhereScore] = useState<number>(0);
-  const [problemWhyScore, setProblemWhyScore] = useState<number>(0);
+  const [problemScores, setProblemScores] = useState<{
+    who: number;
+    what: number;
+    where: number;
+    when: number;
+    why: number;
+  }>({
+    who: 0,
+    what: 0,
+    where: 0,
+    when: 0,
+    why: 0,
+  });
 
   const getDisplayedResponses = () => {
     return {
@@ -92,6 +100,7 @@ function Chatbot() {
           products ? setProducts(products) : undefined;
           setIsProductsAgentLoading(false);
         },
+        setProblemScores,
         productMap,
       ),
     [productMap],
@@ -259,13 +268,7 @@ function Chatbot() {
       </Stack>
       <Sidebar
         problem={problem}
-        problemScores={{
-          who: problemWhoScore,
-          what: problemWhatScore,
-          where: problemWhereScore,
-          when: problemWhenScore,
-          why: problemWhyScore,
-        }}
+        problemScores={problemScores}
         features={features}
         products={products}
         productMap={productMap}

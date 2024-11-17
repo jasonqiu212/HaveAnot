@@ -50,25 +50,40 @@ function ProblemStatement({
                 <Text c="gray.7" fw="bold">
                   {getProblemStatementStatus()}
                 </Text>
-                <Progress color="indigo.6" value={progress} />
+                <Progress
+                  color="indigo.6"
+                  value={progress * 100}
+                  transitionDuration={300}
+                />
               </Stack>
             </Accordion.Control>
             <Accordion.Panel>
               <Stack gap="sm">
-                <ChecklistItem isChecked={problemScores.who == 1} label="Who" />
+                <ChecklistItem
+                  isChecked={problemScores.who == 1}
+                  isHalfChecked={problemScores.who != 0}
+                  label="Who"
+                />
                 <ChecklistItem
                   isChecked={problemScores.what == 1}
+                  isHalfChecked={problemScores.what != 0}
                   label="What"
                 />
                 <ChecklistItem
                   isChecked={problemScores.when == 1}
+                  isHalfChecked={problemScores.when != 0}
                   label="When"
                 />
                 <ChecklistItem
                   isChecked={problemScores.where == 1}
+                  isHalfChecked={problemScores.where != 0}
                   label="Where"
                 />
-                <ChecklistItem isChecked={problemScores.why == 1} label="Why" />
+                <ChecklistItem
+                  isChecked={problemScores.why == 1}
+                  isHalfChecked={problemScores.why != 0}
+                  label="Why"
+                />
               </Stack>
             </Accordion.Panel>
           </Accordion.Item>

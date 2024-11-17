@@ -26,11 +26,14 @@ import { ProblemAgentNode } from './node/ProblemAgentNode';
 import { ProblemConstructorAgentNode } from './node/ProblemConstructorAgentNode';
 import { ProductsAgentNode } from './node/ProductsAgentNode';
 
-export type GeneratedStateKey =
+export type GeneratedStateKey = Extract<
+  keyof typeof StateSchema.State,
+  | 'problemParts'
   | 'lastGeneratedChat'
   | 'lastGeneratedProblem'
   | 'lastGeneratedFeatures'
-  | 'lastGeneratedProducts';
+  | 'lastGeneratedProducts'
+>;
 
 // Does not include chat, since state.messages already includes chat history and
 // users cannot modify displayed chat
@@ -78,6 +81,7 @@ export class HaveAnotLanggraph {
     'problemParts',
     problemConstructorAgentPrompt,
   );
+  displayedProblemPartsUpdaterNode: DisplayedResponseUpdaterNode<'problemParts'>;
 
   chatAgentNode = new ChatAgentNode(
     getOpenAIModel(),
@@ -108,6 +112,14 @@ export class HaveAnotLanggraph {
   setDisplayedFeatures?: (features: string) => void;
   setDisplayedProducts?: (products?: string[]) => void;
 
+  setDisplayedProblemScores: (scores: {
+    who: number;
+    what: number;
+    where: number;
+    when: number;
+    why: number;
+  }) => void;
+
   productMap: Record<string, Product>;
   productDocs: Document[] = [];
 
@@ -118,12 +130,20 @@ export class HaveAnotLanggraph {
     setDisplayedProblem: (problem: string) => void,
     setDisplayedFeatures: (features: string) => void,
     setDisplayedProducts: (products?: string[]) => void,
+    setDisplayedProblemScores: (scores: {
+      who: number;
+      what: number;
+      where: number;
+      when: number;
+      why: number;
+    }) => void,
     productMap?: Record<string, Product>,
   ) {
     this.setDisplayedChat = setDisplayedChat;
     this.setDisplayedProblem = setDisplayedProblem;
     this.setDisplayedFeatures = setDisplayedFeatures;
     this.setDisplayedProducts = setDisplayedProducts;
+    this.setDisplayedProblemScores = setDisplayedProblemScores;
 
     this.productMap = productMap ?? {};
     for (const [name, product] of Object.entries(this.productMap)) {
@@ -138,6 +158,20 @@ export class HaveAnotLanggraph {
       );
     }
 
+    this.displayedProblemPartsUpdaterNode = new DisplayedResponseUpdaterNode(
+      'problemParts',
+      (stateValue) => {
+        if (stateValue) {
+          setDisplayedProblemScores({
+            who: stateValue.who?.score ?? 0,
+            what: stateValue.what?.score ?? 0,
+            where: stateValue.where?.score ?? 0,
+            when: stateValue.when?.score ?? 0,
+            why: stateValue.why?.score ?? 0,
+          });
+        }
+      },
+    );
     this.displayedChatUpdaterNode = new DisplayedResponseUpdaterNode(
       'lastGeneratedChat',
       (stateValue) => {
@@ -192,6 +226,12 @@ export class HaveAnotLanggraph {
       )
       .addNode('chatAgent', this.chatAgentNode.invoke.bind(this.chatAgentNode))
       .addNode(
+        'displayedProblemPartsUpdate',
+        this.displayedProblemPartsUpdaterNode.invoke.bind(
+          this.displayedProblemPartsUpdaterNode,
+        ),
+      )
+      .addNode(
         'displayedChatUpdater',
         this.displayedChatUpdaterNode.invoke.bind(
           this.displayedChatUpdaterNode,
@@ -226,7 +266,8 @@ export class HaveAnotLanggraph {
 
       .addEdge('__start__', 'problemConstructorAgent')
       .addEdge('problemConstructorAgent', 'chatAgent')
-      .addEdge('chatAgent', 'displayedChatUpdater')
+      .addEdge('chatAgent', 'displayedProblemPartsUpdate')
+      .addEdge('displayedProblemPartsUpdate', 'displayedChatUpdater')
       .addEdge('displayedChatUpdater', 'problemAgent')
       .addEdge('problemAgent', 'displayedProblemUpdater')
       .addEdge('displayedProblemUpdater', 'featuresAgent')
