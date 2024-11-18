@@ -20,20 +20,20 @@ export class ProblemAgentNode extends AgentNode<'lastGeneratedProblem'> {
   }
 
   override getSystemMessage(state: typeof StateSchema.State) {
-    const whoScoreAndReason = state.problemParts?.who
-      ? `(score: ${state.problemParts.who.score}, reason for score: ${state.problemParts.who.missing})`
+    const whoScoreAndReason = state.lastGeneratedProblemParts?.who
+      ? `(score: ${state.lastGeneratedProblemParts.who.score}, reason for score: ${state.lastGeneratedProblemParts.who.missing})`
       : '';
-    const whatScoreAndReason = state.problemParts?.what
-      ? `(score: ${state.problemParts.what.score}, reason for score: ${state.problemParts.what.missing})`
+    const whatScoreAndReason = state.lastGeneratedProblemParts?.what
+      ? `(score: ${state.lastGeneratedProblemParts.what.score}, reason for score: ${state.lastGeneratedProblemParts.what.missing})`
       : '';
-    const whereScoreAndReason = state.problemParts?.where
-      ? `(score: ${state.problemParts.where.score}, reason for score: ${state.problemParts.where.missing})`
+    const whereScoreAndReason = state.lastGeneratedProblemParts?.where
+      ? `(score: ${state.lastGeneratedProblemParts.where.score}, reason for score: ${state.lastGeneratedProblemParts.where.missing})`
       : '';
-    const whenScoreAndReason = state.problemParts?.when
-      ? `(score: ${state.problemParts.when.score}, reason for score: ${state.problemParts.when.missing})`
+    const whenScoreAndReason = state.lastGeneratedProblemParts?.when
+      ? `(score: ${state.lastGeneratedProblemParts.when.score}, reason for score: ${state.lastGeneratedProblemParts.when.missing})`
       : '';
-    const whyScoreAndReason = state.problemParts?.why
-      ? `(score: ${state.problemParts.why.score}, reason for score: ${state.problemParts.why.missing})`
+    const whyScoreAndReason = state.lastGeneratedProblemParts?.why
+      ? `(score: ${state.lastGeneratedProblemParts.why.score}, reason for score: ${state.lastGeneratedProblemParts.why.missing})`
       : '';
 
     return new SystemMessage(`
@@ -41,11 +41,11 @@ export class ProblemAgentNode extends AgentNode<'lastGeneratedProblem'> {
 
       Here are the previously generated states:
       Problem Parts and Scores:
-        Who is affected by the problem?: ${state.problemParts?.who?.answer ?? '<empty>'} ${whoScoreAndReason})
-        What are the pain points you’re trying to solve or you currently face?: ${state.problemParts?.what?.answer ?? '<empty>'} ${whatScoreAndReason})
-        Where is the problem occurring?: ${state.problemParts?.where?.answer ?? '<empty>'} ${whereScoreAndReason})
-        When does the problem occur?: ${state.problemParts?.when?.answer ?? '<empty>'} ${whenScoreAndReason})
-        Why is the problem important or worth solving?: ${state.problemParts?.why?.answer ?? '<empty>'} ${whyScoreAndReason})
+        Who is affected by the problem?: ${state.lastGeneratedProblemParts?.who?.answer ?? '<empty>'} ${whoScoreAndReason})
+        What are the pain points you’re trying to solve or you currently face?: ${state.lastGeneratedProblemParts?.what?.answer ?? '<empty>'} ${whatScoreAndReason})
+        Where is the problem occurring?: ${state.lastGeneratedProblemParts?.where?.answer ?? '<empty>'} ${whereScoreAndReason})
+        When does the problem occur?: ${state.lastGeneratedProblemParts?.when?.answer ?? '<empty>'} ${whenScoreAndReason})
+        Why is the problem important or worth solving?: ${state.lastGeneratedProblemParts?.why?.answer ?? '<empty>'} ${whyScoreAndReason})
       
       Here is the previously generated problem statement:
       Problem: ${state.lastGeneratedProblem ?? '<empty>'}

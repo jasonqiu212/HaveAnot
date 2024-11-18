@@ -33,7 +33,7 @@ import { ProductsAgentNode } from './node/ProductsAgentNode';
 
 export type GeneratedStateKey = Extract<
   keyof typeof StateSchema.State,
-  | 'problemParts'
+  | 'lastGeneratedProblemParts'
   | 'lastGeneratedChat'
   | 'lastGeneratedProblem'
   | 'lastGeneratedFeatures'
@@ -64,10 +64,9 @@ export const StateSchema = Annotation.Root({
   // Updated whenever user submits input
   displayedResponses: Annotation<DisplayedResponses | undefined>,
 
-  problemParts: Annotation<
+  lastGeneratedProblemParts: Annotation<
     z.infer<typeof problemConstructorAgentOutputSchema> | undefined
   >,
-
   lastGeneratedChat: Annotation<AIMessage | undefined>,
   lastGeneratedProblem: Annotation<AIMessage | undefined>,
   lastGeneratedFeatures: Annotation<
@@ -88,7 +87,7 @@ export class HaveAnotLanggraph {
     'problemParts',
     problemConstructorAgentPrompt,
   );
-  displayedProblemPartsUpdaterNode: DisplayedResponseUpdaterNode<'problemParts'>;
+  displayedProblemPartsUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedProblemParts'>;
 
   chatAgentNode = new ChatAgentNode(
     getOpenAIModel(),
@@ -168,7 +167,7 @@ export class HaveAnotLanggraph {
     }
 
     this.displayedProblemPartsUpdaterNode = new DisplayedResponseUpdaterNode(
-      'problemParts',
+      'lastGeneratedProblemParts',
       (stateValue) => {
         if (stateValue) {
           setDisplayedProblemScores({
