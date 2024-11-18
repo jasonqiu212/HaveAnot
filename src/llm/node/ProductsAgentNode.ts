@@ -8,7 +8,7 @@ import { MemoryVectorStore } from 'langchain/vectorstores/memory';
 
 import { Product } from '../../pages/Chatbot';
 import { StateSchema } from '../Langgraph';
-import { getOpenAIEmbeddings } from '../Utils';
+import { getFeaturesFromOutputSchema, getOpenAIEmbeddings } from '../Utils';
 import { AgentNode } from './AgentNode';
 
 export class ProductsAgentNode extends AgentNode<'lastGeneratedProducts'> {
@@ -40,7 +40,7 @@ export class ProductsAgentNode extends AgentNode<'lastGeneratedProducts'> {
       ${state.lastGeneratedProblem ?? '<empty>'}
 
       Here are the latest solution features:
-      ${state.lastGeneratedFeatures ?? '<empty>'}
+      ${getFeaturesFromOutputSchema(state.lastGeneratedFeatures) ?? '<empty>'}
 
       Here are the previously generated states:
       Problem: ${state.displayedResponses?.problem ?? '<empty>'}

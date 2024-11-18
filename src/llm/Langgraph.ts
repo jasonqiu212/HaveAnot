@@ -18,7 +18,12 @@ import {
   productsAgentPrompt1,
   productsAgentPrompt2,
 } from './Prompts';
-import { getOpenAIModel, problemConstructorAgentOutputSchema } from './Utils';
+import {
+  featuresAgentOutputSchema,
+  getFeaturesFromOutputSchema,
+  getOpenAIModel,
+  problemConstructorAgentOutputSchema,
+} from './Utils';
 import { ChatAgentNode } from './node/ChatAgentNode';
 import { DisplayedResponseUpdaterNode } from './node/DisplayedResponseUpdaterNode';
 import { FeaturesAgentNode } from './node/FeaturesAgentNode';
@@ -65,7 +70,9 @@ export const StateSchema = Annotation.Root({
 
   lastGeneratedChat: Annotation<AIMessage | undefined>,
   lastGeneratedProblem: Annotation<AIMessage | undefined>,
-  lastGeneratedFeatures: Annotation<AIMessage | undefined>,
+  lastGeneratedFeatures: Annotation<
+    z.infer<typeof featuresAgentOutputSchema> | undefined
+  >,
 
   lastGeneratedProducts: Annotation<string[] | undefined>,
 });
@@ -98,7 +105,9 @@ export class HaveAnotLanggraph {
   displayedProblemUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedProblem'>;
 
   featuresAgentNode = new FeaturesAgentNode(
-    getOpenAIModel(),
+    getOpenAIModel().withStructuredOutput(featuresAgentOutputSchema, {
+      strict: true,
+    }),
     'lastGeneratedFeatures',
     featuresAgentPrompt,
   );
@@ -193,9 +202,9 @@ export class HaveAnotLanggraph {
     this.displayedFeaturesUpdaterNode = new DisplayedResponseUpdaterNode(
       'lastGeneratedFeatures',
       (stateValue) => {
-        const messageStr = stateValue?.content.toString();
-        if (messageStr) {
-          setDisplayedFeatures(messageStr);
+        const featuresStr = getFeaturesFromOutputSchema(stateValue);
+        if (featuresStr) {
+          setDisplayedFeatures(featuresStr);
         }
       },
     );

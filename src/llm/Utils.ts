@@ -123,3 +123,38 @@ export const problemConstructorAgentOutputSchema = z
   .describe(
     'Concise answers to questions for the problem statement. This will not be shown to the user.',
   );
+
+export const featuresAgentOutputSchema = z.object({
+  requirementGroups: z.array(
+    z.object({
+      uniqueId: z
+        .number()
+        .describe(
+          `An automatically incrementing ID that uniquely identifies the requirement group`,
+        ),
+      header: z.string().describe(`The header of the requirement group`),
+      features: z.array(
+        z
+          .object({
+            uniqueId: z
+              .number()
+              .describe(
+                `An automatically incrementing ID that uniquely identifies a requirement`,
+              ),
+            feature: z.string().describe(`The feature to be displayed`),
+          })
+          .describe(`A list of features to be displayed under the header.`),
+      ),
+    }),
+  ),
+});
+
+export const getFeaturesFromOutputSchema = (
+  schema?: z.infer<typeof featuresAgentOutputSchema>,
+): string | undefined =>
+  schema?.requirementGroups
+    .map(
+      ({ header, features }) =>
+        `**${header}**  \n  ${features.map((obj, i) => `${i + 1}. ${obj.feature}`).join('  \n')}`,
+    )
+    .join('  \n  \n');

@@ -1,16 +1,16 @@
 import { BaseLanguageModelInput } from '@langchain/core/language_models/base';
-import { AIMessageChunk, SystemMessage } from '@langchain/core/messages';
+import { SystemMessage } from '@langchain/core/messages';
 import { Runnable } from '@langchain/core/runnables';
 import { ChatOpenAICallOptions } from '@langchain/openai';
 
 import { StateSchema } from '../Langgraph';
-import { AgentNode } from './AgentNode';
+import { StructuredOutputAgentNode } from './StructuredOutputAgentNode';
 
-export class FeaturesAgentNode extends AgentNode<'lastGeneratedFeatures'> {
+export class FeaturesAgentNode extends StructuredOutputAgentNode<'lastGeneratedFeatures'> {
   constructor(
     model: Runnable<
       BaseLanguageModelInput,
-      AIMessageChunk,
+      (typeof StateSchema.State)['lastGeneratedFeatures'],
       ChatOpenAICallOptions
     >,
     stateKey: 'lastGeneratedFeatures',
