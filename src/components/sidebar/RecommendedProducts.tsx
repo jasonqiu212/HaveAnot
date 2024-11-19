@@ -23,13 +23,13 @@ import ProductCard from '../card/ProductCard';
 // };
 
 interface RecommendedProductsProps {
-  productMap: Record<string, Product> | undefined;
-  recommendedProducts: string[] | undefined;
+  productMap: Map<number, Product> | undefined;
+  recommendedProductIds: number[] | undefined;
   isWaitingForUpdate: boolean;
 }
 function RecommendedProducts({
   productMap,
-  recommendedProducts,
+  recommendedProductIds,
   isWaitingForUpdate,
 }: RecommendedProductsProps) {
   return (
@@ -45,18 +45,14 @@ function RecommendedProducts({
             loaderProps={{ size: 'sm', color: 'indigo.5' }}
             opacity="60%"
           />
-          {recommendedProducts?.map(
-            (recommendedProduct: string, index: number) => {
-              if (
-                productMap &&
-                recommendedProduct &&
-                recommendedProduct in productMap
-              ) {
+          {recommendedProductIds?.map(
+            (recommendedProductId: number, index: number) => {
+              if (productMap && productMap.has(recommendedProductId)) {
                 const {
                   Product: name,
                   'Short description': description,
                   Website: websiteLink,
-                } = productMap[recommendedProduct];
+                } = productMap.get(recommendedProductId)!;
                 return (
                   <ProductCard
                     key={index}

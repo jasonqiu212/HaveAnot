@@ -1,43 +1,70 @@
 import { Document } from '@langchain/core/documents';
 import { BaseLanguageModelInput } from '@langchain/core/language_models/base';
-import { AIMessageChunk, SystemMessage } from '@langchain/core/messages';
+import { SystemMessage } from '@langchain/core/messages';
 import { Runnable } from '@langchain/core/runnables';
 import { VectorStoreRetriever } from '@langchain/core/vectorstores';
 import { ChatOpenAICallOptions } from '@langchain/openai';
 import { MemoryVectorStore } from 'langchain/vectorstores/memory';
+import { z } from 'zod';
 
 import { Product } from '../../pages/Chatbot';
 import { StateSchema } from '../Langgraph';
-import { getFeaturesFromOutputSchema, getOpenAIEmbeddings } from '../Utils';
-import { AgentNode } from './AgentNode';
+import {
+  getFeaturesFromOutputSchema,
+  getOpenAIEmbeddings,
+  getOpenAIModel,
+  getProductsAgentOutputSchema,
+  productsAgentRAGQuestionsOutputSchema,
+} from '../Utils';
+import { StructuredOutputAgentNode } from './StructuredOutputAgentNode';
 
-export class ProductsAgentNode extends AgentNode<'lastGeneratedProducts'> {
-  systemPrompt2: string;
+export class ProductsAgentNode extends StructuredOutputAgentNode<'lastGeneratedProductIds'> {
+  modelForRAG: Runnable<
+    BaseLanguageModelInput,
+    z.infer<typeof productsAgentRAGQuestionsOutputSchema>,
+    ChatOpenAICallOptions
+  >;
+  systemPromptForRAG: string;
   productDocs: Document[];
-  productMap: Record<string, Product>;
+  productMap: Map<number, Product>;
+  retrievedProductIdNamesAndDescriptions: {
+    id: number;
+    productName: string;
+    description: string;
+  }[];
   retriever?: VectorStoreRetriever<MemoryVectorStore>;
 
   constructor(
     model: Runnable<
       BaseLanguageModelInput,
-      AIMessageChunk,
+      (typeof StateSchema.State)['lastGeneratedProductIds'],
       ChatOpenAICallOptions
     >,
-    stateKey: 'lastGeneratedProducts',
+    stateKey: 'lastGeneratedProductIds',
     systemPrompt: string,
-    systemPrompt2: string,
+    systemPromptForRAG: string,
     productDocs: Document[],
-    productMap: Record<string, Product>,
+    productMap: Map<number, Product>,
   ) {
     super(model, stateKey, systemPrompt);
-    this.systemPrompt2 = systemPrompt2;
+    this.modelForRAG = getOpenAIModel(0).withStructuredOutput(
+      productsAgentRAGQuestionsOutputSchema,
+      { strict: true },
+    );
+    this.systemPromptForRAG = systemPromptForRAG;
     this.productDocs = productDocs;
     this.productMap = productMap;
+    this.retrievedProductIdNamesAndDescriptions = productDocs.map((doc) => ({
+      id: Number(doc.id!), // assume Document has been given an ID corresponding to the index in the product map in App.tsx
+      productName: doc.metadata['name'],
+      description:
+        this.productMap.get(Number(doc.id!))?.['Short description'] ?? '',
+    }));
   }
 
   getCommonSystemMessageString(state: typeof StateSchema.State) {
     return `Here is the latest problem statement:
-      ${state.lastGeneratedProblem ?? '<empty>'}
+      ${state.lastGeneratedProblem?.content ?? '<empty>'}
 
       Here are the latest solution features:
       ${getFeaturesFromOutputSchema(state.lastGeneratedFeatures) ?? '<empty>'}
@@ -45,42 +72,71 @@ export class ProductsAgentNode extends AgentNode<'lastGeneratedProducts'> {
       Here are the previously generated states:
       Problem: ${state.displayedResponses?.problem ?? '<empty>'}
       Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
-      Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`;
+      Suggested Products: ${state.displayedResponses?.productIds ?? '<empty>'}`;
   }
 
   override getSystemMessage(state: typeof StateSchema.State) {
-    return new SystemMessage(
+    const systemMessage = new SystemMessage(
       `${this.systemPrompt}
 
+      Here are the suggested products that could help address the problem:
+      ${this.retrievedProductIdNamesAndDescriptions.map((x) => `{ "id": ${x.id}, "productName": ${x.productName}, "description": ${x.description}}`).join('\n')}
+
       ${this.getCommonSystemMessageString(state)}`,
     );
+    return systemMessage;
   }
 
-  getSystemMessage2(
-    state: typeof StateSchema.State,
-    potentialProducts: string[],
-  ) {
+  getSystemMessageForRAG(state: typeof StateSchema.State) {
     return new SystemMessage(
-      `${this.systemPrompt2}
-
-      Here are the potential products to choose from:
-      ${potentialProducts.reduce((acc, product) => `${acc}\n${product}: ${this.productMap[product]['Short description']}`, '')}
+      `${this.systemPromptForRAG}
 
       ${this.getCommonSystemMessageString(state)}`,
     );
   }
 
-  override async invoke(state: typeof StateSchema.State) {
+  async ragToGetPotentialProductIds(questions: string[]) {
+    console.log('Questions being used for RAG:', questions);
+
     if (!this.retriever) {
       const embeddings = getOpenAIEmbeddings();
       const vectorstore = new MemoryVectorStore(embeddings);
-      console.log(this.productDocs);
+      console.log('Adding documents to vectorstore:', this.productDocs);
       await vectorstore.addDocuments(this.productDocs);
       const retriever = vectorstore.asRetriever({ k: 3 });
       this.retriever = retriever;
     }
 
-    const systemMessage = this.getSystemMessage(state);
+    const productCountMap: Map<number, number> = new Map();
+    for (const question of questions) {
+      const retrievedDocs: Document[] = await this.retriever.invoke(question);
+      console.log(
+        'Products retrieved for question:',
+        question,
+        retrievedDocs.map((doc) => doc.metadata['name']),
+      );
+      for (const doc of retrievedDocs) {
+        const count = productCountMap.get(Number(doc.id!)) ?? 0;
+        productCountMap.set(Number(doc.id!), count + 1);
+      }
+    }
+    console.log('Product count map:', productCountMap);
+
+    const potentialProductIds = [];
+    for (const [productId, count] of productCountMap) {
+      // disable filtering by count to increase the number of products suggested
+      if (count >= 2 && this.productMap.has(productId)) {
+        potentialProductIds.push(productId);
+      }
+    }
+
+    return potentialProductIds;
+  }
+
+  async invokeToGenerateRAGQuestions(
+    state: typeof StateSchema.State,
+  ): Promise<z.infer<typeof productsAgentRAGQuestionsOutputSchema>> {
+    const systemMessage = this.getSystemMessageForRAG(state);
 
     const messages = [
       systemMessage,
@@ -93,76 +149,42 @@ export class ProductsAgentNode extends AgentNode<'lastGeneratedProducts'> {
       }),
     ];
 
-    const response = await this.model.invoke(messages);
-    const questions = response.content
-      .toString()
-      .split('\n')
-      .filter((line) => line !== '');
-    console.log('Questions being used for RAG:', questions);
+    const response = await this.modelForRAG.invoke(messages);
 
-    const productCountMap: Record<string, number> = {};
-    for (const question of questions) {
-      const retrievedDocs: Document[] = await this.retriever.invoke(question);
-      console.log(
-        'Products retrieved for question:',
-        question,
-        retrievedDocs.map((doc) => doc.metadata['name']),
-      );
-      for (const doc of retrievedDocs) {
-        const productName: string = doc.metadata['name'];
-        productCountMap[productName] = productCountMap[productName] ?? 0 + 1;
-      }
-    }
-    console.log('Product to count map:', productCountMap);
+    return response;
+  }
 
-    const potentialProducts = [];
-    for (const [product, _] of Object.entries(productCountMap)) {
-      // disable filtering by count to increase the number of products suggested
-      // if (count >= 2) {
-      potentialProducts.push(product);
-      // }
-    }
-
-    const systemMessage2 = this.getSystemMessage2(state, potentialProducts);
-    const messages2 = [
-      systemMessage2,
-      // for all tool messages, set their content field as '' if it is undefined
-      ...(state.chatHistory ?? []).map((message) => {
-        if (message._getType() === 'tool' && message.content === undefined) {
-          message.content = '';
-        }
-        return message;
-      }),
-    ];
-    const response2 = await this.model.invoke(messages2);
-
-    // remove leading and trailing dashes/whitespace
-    const suggestedProducts = response2.content
-      .toString()
-      .split('\n')
-      .map((line) => line.trim().replace(/^-+|-+$/g, ''));
-    console.log('Suggested products response:', suggestedProducts);
-
-    // additional parsing to reduce chances that suggestedProducts don't match the productMap
-    const filteredSuggestedProducts: string[] = [];
-    suggestedProducts.forEach((str) => {
-      // split by comma and trim whitespace
-      const suggestedProductArr = str.split(',').map((s) => s.trim());
-
-      suggestedProductArr.forEach((suggestedProduct) => {
-        let product: string | undefined;
-        if (!(suggestedProduct in this.productMap)) {
-          product = Object.keys(this.productMap).find((product) =>
-            suggestedProduct.toLowerCase().includes(product.toLowerCase()),
-          );
+  override async invoke(state: typeof StateSchema.State) {
+    const { prompts: ragQuestions } =
+      await this.invokeToGenerateRAGQuestions(state);
+    const potentialProductIds =
+      await this.ragToGetPotentialProductIds(ragQuestions);
+    const potentialProductIdNamesAndDescriptions = potentialProductIds
+      .map((id) => {
+        const product = this.productMap.get(id);
+        if (!product) {
+          return;
         } else {
-          product = suggestedProduct;
+          return {
+            id: id, // assume Document has been given an ID corresponding to the index in the product map in App.tsx
+            productName: product.Product,
+            description: product['Short description'],
+          };
         }
-        product ? filteredSuggestedProducts.push(product) : undefined;
-      });
-    });
-    console.log('Filtered suggested products:', filteredSuggestedProducts);
+      })
+      .filter((x) => x !== undefined);
 
-    return { [this.stateKey]: filteredSuggestedProducts };
+    console.log(
+      'retrievedProductIdNamesAndDescriptions:',
+      potentialProductIdNamesAndDescriptions,
+    );
+    this.retrievedProductIdNamesAndDescriptions =
+      potentialProductIdNamesAndDescriptions;
+    this.model = getOpenAIModel(0).withStructuredOutput(
+      getProductsAgentOutputSchema(potentialProductIds),
+    );
+    const response = await super.invoke(state);
+
+    return response;
   }
 }

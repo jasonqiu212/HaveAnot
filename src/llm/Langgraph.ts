@@ -13,20 +13,24 @@ import { Product } from '../pages/Chatbot';
 import {
   chatAgentPrompt,
   featuresAgentPrompt,
+  featuresProductsMappingAgentPrompt,
   problemAgentPrompt,
   problemConstructorAgentPrompt,
-  productsAgentPrompt1,
-  productsAgentPrompt2,
+  productsAgentPrompt,
+  productsAgentRAGPrompt,
 } from './Prompts';
 import {
   featuresAgentOutputSchema,
   getFeaturesFromOutputSchema,
   getOpenAIModel,
+  getProductsAgentOutputSchema,
+  getRequirementProductsMappingAgentOutputSchema,
   problemConstructorAgentOutputSchema,
 } from './Utils';
 import { ChatAgentNode } from './node/ChatAgentNode';
 import { DisplayedResponseUpdaterNode } from './node/DisplayedResponseUpdaterNode';
 import { FeaturesAgentNode } from './node/FeaturesAgentNode';
+import { FeaturesProductsMappingAgentNode } from './node/FeaturesProductsMappingAgentNode';
 import { ProblemAgentNode } from './node/ProblemAgentNode';
 import { ProblemConstructorAgentNode } from './node/ProblemConstructorAgentNode';
 import { ProductsAgentNode } from './node/ProductsAgentNode';
@@ -37,7 +41,8 @@ export type GeneratedStateKey = Extract<
   | 'lastGeneratedChat'
   | 'lastGeneratedProblem'
   | 'lastGeneratedFeatures'
-  | 'lastGeneratedProducts'
+  | 'lastGeneratedProductIds'
+  | 'lastGeneratedRequirementsToProducts'
 >;
 
 // Does not include chat, since state.messages already includes chat history and
@@ -45,7 +50,7 @@ export type GeneratedStateKey = Extract<
 export interface DisplayedResponses {
   problem?: string;
   features?: string;
-  products?: string[];
+  productIds?: number[];
 }
 
 export const StateSchema = Annotation.Root({
@@ -72,8 +77,13 @@ export const StateSchema = Annotation.Root({
   lastGeneratedFeatures: Annotation<
     z.infer<typeof featuresAgentOutputSchema> | undefined
   >,
-
-  lastGeneratedProducts: Annotation<string[] | undefined>,
+  lastGeneratedProductIds: Annotation<
+    z.infer<ReturnType<typeof getProductsAgentOutputSchema>> | undefined
+  >,
+  lastGeneratedRequirementsToProducts: Annotation<
+    | z.infer<ReturnType<typeof getRequirementProductsMappingAgentOutputSchema>>
+    | undefined
+  >,
 });
 
 export class HaveAnotLanggraph {
@@ -84,7 +94,7 @@ export class HaveAnotLanggraph {
         strict: true,
       },
     ),
-    'problemParts',
+    'lastGeneratedProblemParts',
     problemConstructorAgentPrompt,
   );
   displayedProblemPartsUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedProblemParts'>;
@@ -113,12 +123,14 @@ export class HaveAnotLanggraph {
   displayedFeaturesUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedFeatures'>;
 
   productsAgentNode: ProductsAgentNode;
-  displayedProductsUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedProducts'>;
+  displayedProductsUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedProductIds'>;
+
+  featuresProductsMappingAgentNode: FeaturesProductsMappingAgentNode;
 
   setDisplayedChat: (chat: string) => void;
   setDisplayedProblem?: (problem: string) => void;
   setDisplayedFeatures?: (features: string) => void;
-  setDisplayedProducts?: (products?: string[]) => void;
+  setDisplayedProducts?: (productIds: number[]) => void;
 
   setDisplayedProblemScores: (scores: {
     who: number;
@@ -128,7 +140,7 @@ export class HaveAnotLanggraph {
     why: number;
   }) => void;
 
-  productMap: Record<string, Product>;
+  productMap: Map<number, Product>;
   productDocs: Document[] = [];
 
   app: CompiledStateGraph<any, any, any, StateDefinition>;
@@ -137,7 +149,7 @@ export class HaveAnotLanggraph {
     setDisplayedChat: (chat: string) => void,
     setDisplayedProblem: (problem: string) => void,
     setDisplayedFeatures: (features: string) => void,
-    setDisplayedProducts: (products?: string[]) => void,
+    setDisplayedProducts: (productIds: number[]) => void,
     setDisplayedProblemScores: (scores: {
       who: number;
       what: number;
@@ -145,7 +157,7 @@ export class HaveAnotLanggraph {
       when: number;
       why: number;
     }) => void,
-    productMap?: Record<string, Product>,
+    productMap?: Map<number, Product>,
   ) {
     this.setDisplayedChat = setDisplayedChat;
     this.setDisplayedProblem = setDisplayedProblem;
@@ -153,15 +165,16 @@ export class HaveAnotLanggraph {
     this.setDisplayedProducts = setDisplayedProducts;
     this.setDisplayedProblemScores = setDisplayedProblemScores;
 
-    this.productMap = productMap ?? {};
-    for (const [name, product] of Object.entries(this.productMap)) {
+    this.productMap = productMap ?? new Map();
+    for (const [id, product] of this.productMap) {
       if (!product['Short description']) {
         continue;
       }
       this.productDocs.push(
         new Document({
+          id: id.toString(),
           pageContent: product['Short description'],
-          metadata: { name },
+          metadata: { name: product.Product },
         }),
       );
     }
@@ -209,21 +222,41 @@ export class HaveAnotLanggraph {
     );
     // system prompt inspired from quickstart (https: //langchain-ai.github.io/langgraphjs/tutorials/rag/langgraph_adaptive_rag_local/?h=rag#answer-grader)
     this.productsAgentNode = new ProductsAgentNode(
-      getOpenAIModel(0),
-      'lastGeneratedProducts',
-      productsAgentPrompt1,
-      productsAgentPrompt2,
+      getOpenAIModel(0).withStructuredOutput(getProductsAgentOutputSchema([]), {
+        strict: true,
+      }),
+      'lastGeneratedProductIds',
+      productsAgentPrompt,
+      productsAgentRAGPrompt,
       this.productDocs,
       this.productMap,
     );
     this.displayedProductsUpdaterNode = new DisplayedResponseUpdaterNode(
-      'lastGeneratedProducts',
+      'lastGeneratedProductIds',
       (stateValue) => {
         // if (stateValue && stateValue.length > 0) {
-        setDisplayedProducts(stateValue);
+        const productIdsArr = stateValue?.productIds
+          .filter((obj) => obj.score > 0.7)
+          .map((obj) => obj.productId);
+        const productIdsSet = new Set(productIdsArr);
+        setDisplayedProducts(Array.from(productIdsSet));
         // }
       },
     );
+
+    this.featuresProductsMappingAgentNode =
+      new FeaturesProductsMappingAgentNode(
+        getOpenAIModel(0).withStructuredOutput(
+          getRequirementProductsMappingAgentOutputSchema([]),
+          {
+            strict: true,
+          },
+        ),
+        'lastGeneratedRequirementsToProducts',
+        featuresProductsMappingAgentPrompt,
+        this.productDocs,
+        this.productMap,
+      );
 
     const langgraph = new StateGraph(StateSchema)
       .addNode(
@@ -234,7 +267,7 @@ export class HaveAnotLanggraph {
       )
       .addNode('chatAgent', this.chatAgentNode.invoke.bind(this.chatAgentNode))
       .addNode(
-        'displayedProblemPartsUpdate',
+        'displayedProblemPartsUpdater',
         this.displayedProblemPartsUpdaterNode.invoke.bind(
           this.displayedProblemPartsUpdaterNode,
         ),
@@ -271,22 +304,29 @@ export class HaveAnotLanggraph {
           this.displayedProductsUpdaterNode,
         ),
       )
+      .addNode(
+        'featuresProductsMappingAgent',
+        this.featuresProductsMappingAgentNode.invoke.bind(
+          this.featuresProductsMappingAgentNode,
+        ),
+      )
 
       .addEdge('__start__', 'problemConstructorAgent')
       .addEdge('problemConstructorAgent', 'chatAgent')
-      .addEdge('chatAgent', 'displayedProblemPartsUpdate')
-      .addEdge('displayedProblemPartsUpdate', 'displayedChatUpdater')
+      .addEdge('chatAgent', 'displayedProblemPartsUpdater')
+      .addEdge('displayedProblemPartsUpdater', 'displayedChatUpdater')
       .addEdge('displayedChatUpdater', 'problemAgent')
       .addEdge('problemAgent', 'displayedProblemUpdater')
       .addEdge('displayedProblemUpdater', 'featuresAgent')
       .addEdge('featuresAgent', 'displayedFeaturesUpdater')
       .addEdge('displayedFeaturesUpdater', 'productsAgent')
       .addEdge('productsAgent', 'displayedProductsUpdater')
-      .addEdge('displayedProductsUpdater', 'chatAgent');
+      .addEdge('displayedProductsUpdater', 'featuresProductsMappingAgent')
+      .addEdge('featuresProductsMappingAgent', 'problemConstructorAgent');
 
     this.app = langgraph.compile({
       checkpointer: new MemorySaver(),
-      interruptAfter: ['displayedProductsUpdater'],
+      interruptAfter: ['featuresProductsMappingAgent'],
     });
   }
 

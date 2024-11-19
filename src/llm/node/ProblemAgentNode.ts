@@ -48,7 +48,7 @@ export class ProblemAgentNode extends AgentNode<'lastGeneratedProblem'> {
         Why is the problem important or worth solving?: ${state.lastGeneratedProblemParts?.why?.answer ?? '<empty>'} ${whyScoreAndReason})
       
       Here is the previously generated problem statement:
-      Problem: ${state.lastGeneratedProblem ?? '<empty>'}
+      Problem: ${state.lastGeneratedProblem?.content ?? '<empty>'}
       `);
   }
 

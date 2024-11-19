@@ -48,7 +48,7 @@ export class ChatAgentNode extends AgentNode<'lastGeneratedChat'> {
         Why is the problem important or worth solving?: ${state.lastGeneratedProblemParts?.why?.answer ?? '<empty>'} ${whyScoreAndReason})
       Problem: ${state.displayedResponses?.problem ?? '<empty>'}
       Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
-      Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`);
+      Suggested Products: ${state.displayedResponses?.productIds ?? '<empty>'}`);
   }
 
   override async invoke(state: typeof StateSchema.State) {

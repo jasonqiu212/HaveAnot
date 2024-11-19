@@ -4,6 +4,7 @@ import { Runnable } from '@langchain/core/runnables';
 import { ChatOpenAICallOptions } from '@langchain/openai';
 
 import { StateSchema } from '../Langgraph';
+import { getFeaturesFromOutputSchema } from '../Utils';
 import { StructuredOutputAgentNode } from './StructuredOutputAgentNode';
 
 export class FeaturesAgentNode extends StructuredOutputAgentNode<'lastGeneratedFeatures'> {
@@ -24,12 +25,15 @@ export class FeaturesAgentNode extends StructuredOutputAgentNode<'lastGeneratedF
       `${this.systemPrompt}
 
       Here is the latest problem statement:
-      ${state.lastGeneratedProblem ?? '<empty>'}
+      ${state.lastGeneratedProblem?.content ?? '<empty>'}
+
+      Here are the latest solution features:
+      ${getFeaturesFromOutputSchema(state.lastGeneratedFeatures)}
 
       Here are the previously generated states:
       Problem: ${state.displayedResponses?.problem ?? '<empty>'}
       Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
-      Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`,
+      Suggested Products: ${state.displayedResponses?.productIds ?? '<empty>'}`,
     );
   }
 }

@@ -5,14 +5,14 @@ import { Runnable, RunnableConfig } from '@langchain/core/runnables';
 import { StateSchema } from '../Langgraph';
 import { StructuredOutputAgentNode } from './StructuredOutputAgentNode';
 
-export class ProblemConstructorAgentNode extends StructuredOutputAgentNode<'problemParts'> {
+export class ProblemConstructorAgentNode extends StructuredOutputAgentNode<'lastGeneratedProblemParts'> {
   constructor(
     model: Runnable<
       BaseLanguageModelInput,
       (typeof StateSchema.State)['lastGeneratedProblemParts'],
       RunnableConfig
     >,
-    stateKey: 'problemParts',
+    stateKey: 'lastGeneratedProblemParts',
     systemPrompt: string,
   ) {
     super(model, stateKey, systemPrompt);
@@ -47,6 +47,6 @@ export class ProblemConstructorAgentNode extends StructuredOutputAgentNode<'prob
         When does the problem occur?: ${state.lastGeneratedProblemParts?.when?.answer ?? '<empty>'} ${whenScoreAndReason})
         Why is the problem important or worth solving?: ${state.lastGeneratedProblemParts?.why?.answer ?? '<empty>'} ${whyScoreAndReason})
       Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
-      Suggested Products: ${state.displayedResponses?.products ?? '<empty>'}`);
+      Suggested Products: ${state.displayedResponses?.productIds ?? '<empty>'}`);
   }
 }

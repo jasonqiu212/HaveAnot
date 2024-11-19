@@ -158,3 +158,68 @@ export const getFeaturesFromOutputSchema = (
         `**${header}**  \n  ${features.map((obj, i) => `${i + 1}. ${obj.feature}`).join('  \n')}`,
     )
     .join('  \n  \n');
+
+export const getProductsAgentOutputSchema = (
+  potentialProductsIds: Array<number>,
+) =>
+  z.object({
+    productIds: z.array(
+      z.object({
+        productId:
+          potentialProductsIds.length == 0
+            ? z.number()
+            : potentialProductsIds.length == 1
+              ? z.literal(potentialProductsIds[0])
+              : z.union(
+                  potentialProductsIds.map((p) => z.literal(p)) as [
+                    z.ZodLiteral<number>,
+                    z.ZodLiteral<number>,
+                    ...z.ZodLiteral<number>[],
+                  ],
+                ),
+        score: z
+          .number()
+          .describe('Score between 0 and 1 of the relevance of the product'),
+      }),
+    ),
+  });
+
+export const getRequirementProductsMappingAgentOutputSchema = (
+  potentialProductsIds: Array<number>,
+) =>
+  z.object({
+    requirementsToProductMappings: z
+      .array(
+        z.object({
+          uniqueIdRequirementGroup: z
+            .number()
+            .describe(`The unique ID of the requirement group`),
+          uniqueIdFeature: z.number().describe(`The unique ID of the feature`),
+          productId:
+            potentialProductsIds.length == 0
+              ? z.number()
+              : potentialProductsIds.length == 1
+                ? z.literal(potentialProductsIds[0])
+                : z.union(
+                    potentialProductsIds.map((p) => z.literal(p)) as [
+                      z.ZodLiteral<number>,
+                      z.ZodLiteral<number>,
+                      ...z.ZodLiteral<number>[],
+                    ],
+                  ),
+          score: z
+            .number()
+            .describe(
+              'Score between 0 and 1 of how relevant the product is to the requirement',
+            ),
+        }),
+      )
+      .describe(
+        'Each item is a mapping of products to a requirement, null if no mappings',
+      )
+      .nullable(),
+  });
+
+export const productsAgentRAGQuestionsOutputSchema = z.object({
+  prompts: z.array(z.string().describe('A prompt for vector store retrieval')),
+});

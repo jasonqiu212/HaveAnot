@@ -57,7 +57,7 @@ function Chatbot() {
     NodeJS.Timeout | undefined
   >();
 
-  const [products, setProducts] = useState<string[] | undefined>();
+  const [productIds, setProductIds] = useState<number[] | undefined>();
   // const [streamedProducts, setStreamedProducts] = useThrottledState<
   //   string | undefined
   // >(undefined, 20);
@@ -86,7 +86,7 @@ function Chatbot() {
     return {
       problem: streamedProblem ?? problem,
       features: streamedFeatures ?? features,
-      products: products,
+      products: productIds,
     };
   };
 
@@ -96,8 +96,8 @@ function Chatbot() {
         setStreamedMessage,
         setStreamedProblem,
         setStreamedFeatures,
-        (products?: string[]) => {
-          products ? setProducts(products) : undefined;
+        (productIds?: number[]) => {
+          productIds ? setProductIds(productIds) : undefined;
           setIsProductsAgentLoading(false);
         },
         setProblemScores,
@@ -270,7 +270,7 @@ function Chatbot() {
         problem={problem}
         problemScores={problemScores}
         features={features}
-        products={products}
+        productIds={productIds}
         productMap={productMap}
         isStreamingProblem={streamedProblem !== undefined}
         isStreamingFeatures={streamedFeatures !== undefined}
