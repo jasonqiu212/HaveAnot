@@ -93,11 +93,6 @@ function ProblemStatement({
         ) : (
           <NotEnoughInformation />
         )}
-        {/* {problem ? (
-          <TextCard text={problem} isWaitingForUpdate={isWaitingForUpdate} />
-        ) : (
-          <NotEnoughInformation />
-        )} */}
       </Stack>
     </ScrollArea>
   );
