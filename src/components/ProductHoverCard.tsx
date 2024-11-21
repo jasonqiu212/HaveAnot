@@ -11,7 +11,7 @@ function ProductHoverCard({ label }: ProductHoverCardProps) {
     useDisclosure(false);
 
   return (
-    <HoverCard width={280} shadow="md">
+    <HoverCard width={320} shadow="md">
       <HoverCard.Target>
         <Badge
           variant={isHovering ? 'filled' : 'light'}
