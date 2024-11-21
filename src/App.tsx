@@ -29,11 +29,11 @@ export const ProblemStatementContext = createContext<
 >([undefined, () => {}]);
 
 export const ProductMapContext = createContext<
-  Record<string, Product> | undefined
+  Map<number, Product> | undefined
 >(undefined);
 
 function App() {
-  const [productMap, setProductMap] = useState<Record<string, Product>>();
+  const [productMap, setProductMap] = useState<Map<number, Product>>();
   const [problemStatement, setProblemStatement] = useState<string>();
 
   const fetchProductData = async () => {
@@ -42,9 +42,9 @@ function App() {
     );
     return response.json().then((data) => {
       console.log('Products from Google Sheet:', data);
-      const productMap: Record<string, Product> = {};
-      for (const product of data) {
-        productMap[product['Product']] = product;
+      const productMap: Map<number, Product> = new Map();
+      for (let i = 0; i < data.length; i++) {
+        productMap.set(i, data[i]);
       }
       setProductMap(productMap);
     });

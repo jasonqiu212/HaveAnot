@@ -6,14 +6,14 @@ import { ChatOpenAICallOptions } from '@langchain/openai';
 import { StateSchema } from '../Langgraph';
 import { AgentNode } from './AgentNode';
 
-export class ChatAgentNode extends AgentNode<'lastGeneratedChat'> {
+export class ProblemAgentNode extends AgentNode<'lastGeneratedProblem'> {
   constructor(
     model: Runnable<
       BaseLanguageModelInput,
       AIMessageChunk,
       ChatOpenAICallOptions
     >,
-    stateKey: 'lastGeneratedChat',
+    stateKey: 'lastGeneratedProblem',
     systemPrompt: string,
   ) {
     super(model, stateKey, systemPrompt);
@@ -46,18 +46,18 @@ export class ChatAgentNode extends AgentNode<'lastGeneratedChat'> {
         Where is the problem occurring?: ${state.lastGeneratedProblemParts?.where?.answer ?? '<empty>'} ${whereScoreAndReason})
         When does the problem occur?: ${state.lastGeneratedProblemParts?.when?.answer ?? '<empty>'} ${whenScoreAndReason})
         Why is the problem important or worth solving?: ${state.lastGeneratedProblemParts?.why?.answer ?? '<empty>'} ${whyScoreAndReason})
-      Problem: ${state.displayedResponses?.problem ?? '<empty>'}
-      Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
-      Suggested Products: ${state.displayedResponses?.productIds ?? '<empty>'}`);
+      
+      Here is the previously generated problem statement:
+      Problem: ${state.lastGeneratedProblem?.content ?? '<empty>'}
+      `);
   }
 
+  // don't include the chat history with the user
+  // so that problem statement generated is solely based on ProblemConstrucotrAgent's responses, and the previously response of this ProblemAgent
   override async invoke(state: typeof StateSchema.State) {
-    const superResponse = await super.invoke(state);
+    const systemMessage = this.getSystemMessage(state);
+    const response = await this.model.invoke([systemMessage]);
 
-    superResponse.chatHistory =
-      superResponse[this.stateKey] === undefined
-        ? []
-        : [superResponse[this.stateKey]!];
-    return superResponse;
+    return { [this.stateKey]: response };
   }
 }

@@ -7,27 +7,50 @@ import {
   StateDefinition,
   StateGraph,
 } from '@langchain/langgraph/web';
+import { z } from 'zod';
 
 import { Product } from '../pages/Chatbot';
-import { getOpenAIModel } from './Utils';
-import { AgentNode } from './node/AgentNode';
+import {
+  chatAgentPrompt,
+  featuresAgentPrompt,
+  featuresProductsMappingAgentPrompt,
+  problemAgentPrompt,
+  problemConstructorAgentPrompt,
+  productsAgentPrompt,
+  productsAgentRAGPrompt,
+} from './Prompts';
+import {
+  featuresAgentOutputSchema,
+  getFeaturesFromOutputSchema,
+  getOpenAIModel,
+  getProductsAgentOutputSchema,
+  getRequirementProductMappingAgentOutputSchema,
+  problemConstructorAgentOutputSchema,
+} from './Utils';
 import { ChatAgentNode } from './node/ChatAgentNode';
 import { DisplayedResponseUpdaterNode } from './node/DisplayedResponseUpdaterNode';
 import { FeaturesAgentNode } from './node/FeaturesAgentNode';
+import { FeaturesProductsMappingAgentNode } from './node/FeaturesProductsMappingAgentNode';
+import { ProblemAgentNode } from './node/ProblemAgentNode';
+import { ProblemConstructorAgentNode } from './node/ProblemConstructorAgentNode';
 import { ProductsAgentNode } from './node/ProductsAgentNode';
 
-export type GeneratedStateKey =
+export type GeneratedStateKey = Extract<
+  keyof typeof StateSchema.State,
+  | 'lastGeneratedProblemParts'
   | 'lastGeneratedChat'
   | 'lastGeneratedProblem'
   | 'lastGeneratedFeatures'
-  | 'lastGeneratedProducts';
+  | 'lastGeneratedProductIds'
+  | 'lastGeneratedRequirementsToProducts'
+>;
 
 // Does not include chat, since state.messages already includes chat history and
 // users cannot modify displayed chat
 export interface DisplayedResponses {
   problem?: string;
   features?: string;
-  products?: string[];
+  productIds?: number[];
 }
 
 export const StateSchema = Annotation.Root({
@@ -46,76 +69,78 @@ export const StateSchema = Annotation.Root({
   // Updated whenever user submits input
   displayedResponses: Annotation<DisplayedResponses | undefined>,
 
+  lastGeneratedProblemParts: Annotation<
+    z.infer<typeof problemConstructorAgentOutputSchema> | undefined
+  >,
   lastGeneratedChat: Annotation<AIMessage | undefined>,
   lastGeneratedProblem: Annotation<AIMessage | undefined>,
-  lastGeneratedFeatures: Annotation<AIMessage | undefined>,
-
-  lastGeneratedProducts: Annotation<string[] | undefined>,
+  lastGeneratedFeatures: Annotation<
+    z.infer<typeof featuresAgentOutputSchema> | undefined
+  >,
+  lastGeneratedProductIds: Annotation<
+    z.infer<ReturnType<typeof getProductsAgentOutputSchema>> | undefined
+  >,
+  lastGeneratedRequirementsToProducts: Annotation<
+    | z.infer<ReturnType<typeof getRequirementProductMappingAgentOutputSchema>>
+    | undefined
+  >,
 });
 
 export class HaveAnotLanggraph {
+  problemConstructorAgentNode = new ProblemConstructorAgentNode(
+    getOpenAIModel(0).withStructuredOutput(
+      problemConstructorAgentOutputSchema,
+      {
+        strict: true,
+      },
+    ),
+    'lastGeneratedProblemParts',
+    problemConstructorAgentPrompt,
+  );
+  displayedProblemPartsUpdaterNode: DisplayedResponseUpdaterNode;
+
   chatAgentNode = new ChatAgentNode(
     getOpenAIModel(),
     'lastGeneratedChat',
-    `Role: 
-    You are an expert chat agent that matches the length of the response to the user's message. 
-    
-    Task: 
-    Chat with the user to understand their problem statement, and prompt them to provide more details if necessary to formulate a good problem statement.
-    Keep your responses concise, and use bullet points if there are multiple questions. Limit questions to a maximum of 2.
-    If you are asked to update the problem, features or products, respond that this has been done, with the assumption that will be done automatically for you.
-    Take both the chat history and the current state of the problem, features and products into account when responding.`,
+    chatAgentPrompt,
   );
-  displayedChatUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedChat'>;
+  displayedChatUpdaterNode: DisplayedResponseUpdaterNode;
 
-  problemAgentNode = new AgentNode(
+  problemAgentNode = new ProblemAgentNode(
     getOpenAIModel(),
     'lastGeneratedProblem',
-    `Role:
-    You are an expert at crafting professional problem statements.
-
-    Task: 
-    Output a problem statement based on the chat history and the previously generated state of the problem, features and products.
-    Output the previous problem statement if you do not think the problem statement needs to be updated.
-    Problem statements should be in third person and sound professional.
-    Respond only with the problem statement. Do not include any preamble or explanation or the features of the solution or the products.
-
-    Example:
-    60% of Singaporeans lack the knowledge of what can be recycled when disposing their trash. This results in them choosing not to recycle because of the additional effort required for research, resulting in low recycling rates.`,
+    problemAgentPrompt,
   );
-  displayedProblemUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedProblem'>;
+  displayedProblemUpdaterNode: DisplayedResponseUpdaterNode;
 
   featuresAgentNode = new FeaturesAgentNode(
-    getOpenAIModel(),
+    getOpenAIModel().withStructuredOutput(featuresAgentOutputSchema, {
+      strict: true,
+    }),
     'lastGeneratedFeatures',
-    `Role:
-    You are an expert at suggesting potential features for a solution for some problem statement.
-
-    Task:
-    Suggest a list of potential solution requirements based on the latest problem statement, chat history, and the previously generated state of the problem, features and products.
-    Output nothing if you do not think the solution requirements need to be updated, or if there isn't enough information to generate solution requirements.
-
-    Example:
-    **Data Access**
-    - Provide secure access for staff to view and manage data submitted.
-    - Implement role-based permissions to ensure sensitive information is only accessible to authorized personnel.
-
-    **Real-time Updates**
-    - Develop a dashboard that displays real-time updates on at-risk seniors, including health status, care plans, and any recent interventions.
-    - Ensure that notifications are sent to staff when new data is submitted or when significant changes occur.
-    `,
+    featuresAgentPrompt,
   );
-  displayedFeaturesUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedFeatures'>;
 
   productsAgentNode: ProductsAgentNode;
-  displayedProductsUpdaterNode: DisplayedResponseUpdaterNode<'lastGeneratedProducts'>;
+  displayedProductsUpdaterNode: DisplayedResponseUpdaterNode;
+
+  featuresProductsMappingAgentNode: FeaturesProductsMappingAgentNode;
+  displayedFeaturesUpdaterNode: DisplayedResponseUpdaterNode;
 
   setDisplayedChat: (chat: string) => void;
   setDisplayedProblem?: (problem: string) => void;
   setDisplayedFeatures?: (features: string) => void;
-  setDisplayedProducts?: (products?: string[]) => void;
+  setDisplayedProducts?: (productIds: number[]) => void;
 
-  productMap: Record<string, Product>;
+  setDisplayedProblemScores: (scores: {
+    who: number;
+    what: number;
+    where: number;
+    when: number;
+    why: number;
+  }) => void;
+
+  productMap: Map<number, Product>;
   productDocs: Document[] = [];
 
   app: CompiledStateGraph<any, any, any, StateDefinition>;
@@ -124,31 +149,59 @@ export class HaveAnotLanggraph {
     setDisplayedChat: (chat: string) => void,
     setDisplayedProblem: (problem: string) => void,
     setDisplayedFeatures: (features: string) => void,
-    setDisplayedProducts: (products?: string[]) => void,
-    productMap?: Record<string, Product>,
+    setDisplayedProducts: (productIds: number[]) => void,
+    setDisplayedProblemScores: (scores: {
+      who: number;
+      what: number;
+      where: number;
+      when: number;
+      why: number;
+    }) => void,
+    productMap?: Map<number, Product>,
   ) {
     this.setDisplayedChat = setDisplayedChat;
     this.setDisplayedProblem = setDisplayedProblem;
     this.setDisplayedFeatures = setDisplayedFeatures;
     this.setDisplayedProducts = setDisplayedProducts;
+    this.setDisplayedProblemScores = setDisplayedProblemScores;
 
-    this.productMap = productMap ?? {};
-    for (const [name, product] of Object.entries(this.productMap)) {
+    this.productMap = productMap ?? new Map();
+    for (const [id, product] of this.productMap) {
       if (!product['Short description']) {
         continue;
       }
       this.productDocs.push(
         new Document({
+          id: id.toString(),
           pageContent: product['Short description'],
-          metadata: { name },
+          metadata: { name: product.Product },
         }),
       );
     }
 
+    this.displayedProblemPartsUpdaterNode = new DisplayedResponseUpdaterNode(
+      'lastGeneratedProblemParts',
+      (stateValue) => {
+        if (stateValue) {
+          const lastGeneratedProblemParts =
+            stateValue['lastGeneratedProblemParts'];
+
+          setDisplayedProblemScores({
+            who: lastGeneratedProblemParts?.who?.score ?? 0,
+            what: lastGeneratedProblemParts?.what?.score ?? 0,
+            where: lastGeneratedProblemParts?.where?.score ?? 0,
+            when: lastGeneratedProblemParts?.when?.score ?? 0,
+            why: lastGeneratedProblemParts?.why?.score ?? 0,
+          });
+        }
+      },
+    );
     this.displayedChatUpdaterNode = new DisplayedResponseUpdaterNode(
       'lastGeneratedChat',
       (stateValue) => {
-        const messageStr = stateValue?.content.toString();
+        const lastGeneratedChat = stateValue['lastGeneratedChat'];
+
+        const messageStr = lastGeneratedChat?.content.toString();
         if (messageStr) {
           setDisplayedChat(messageStr);
         }
@@ -157,89 +210,140 @@ export class HaveAnotLanggraph {
     this.displayedProblemUpdaterNode = new DisplayedResponseUpdaterNode(
       'lastGeneratedProblem',
       (stateValue) => {
-        const messageStr = stateValue?.content.toString();
+        const lastGeneratedProblem = stateValue['lastGeneratedProblem'];
+        const messageStr = lastGeneratedProblem?.content.toString();
         if (messageStr) {
           setDisplayedProblem(messageStr);
         }
       },
     );
     this.displayedFeaturesUpdaterNode = new DisplayedResponseUpdaterNode(
-      'lastGeneratedFeatures',
+      'lastGeneratedRequirementsToProducts',
       (stateValue) => {
-        const messageStr = stateValue?.content.toString();
-        if (messageStr) {
-          setDisplayedFeatures(messageStr);
+        const requirements = stateValue['lastGeneratedFeatures'];
+        const products = stateValue['lastGeneratedProductIds'];
+
+        const requirementToProductMappings =
+          stateValue['lastGeneratedRequirementsToProducts'];
+
+        const featuresStr = getFeaturesFromOutputSchema(
+          requirements,
+          products,
+          requirementToProductMappings,
+        );
+        if (featuresStr) {
+          console.log(featuresStr);
+          setDisplayedFeatures(featuresStr);
         }
       },
     );
     // system prompt inspired from quickstart (https: //langchain-ai.github.io/langgraphjs/tutorials/rag/langgraph_adaptive_rag_local/?h=rag#answer-grader)
     this.productsAgentNode = new ProductsAgentNode(
-      getOpenAIModel(0),
-      'lastGeneratedProducts',
-      `Role:
-      You are an expert at writing prompts optimised for vector store retrieval, where the vector store contains product descriptions. The vector store uses OpenAI's text-embedding-3-large.
-
-      Task:
-      Write a list of prompts (one prompt on each line, maximum of 5) to be used for vector store retrieval based on the latest problem statement, features, chat history, and the previously generated state of the problem, features and products.
-      These will be used to suggest products to the user based on the problem statement and features.
-      Output nothing if you think there isn't enough information to recommend products.
-      Respond only with the list. Do not include any preamble or explanation`,
+      getOpenAIModel(0).withStructuredOutput(getProductsAgentOutputSchema([]), {
+        strict: true,
+      }),
+      'lastGeneratedProductIds',
+      productsAgentPrompt,
+      productsAgentRAGPrompt,
       this.productDocs,
       this.productMap,
     );
-    // this.productsAgentNode = new ProductsAgentNode(
-    //   getOpenAIModel(),
-    //   'lastGeneratedProducts',
-    //   `You are an expert at suggesting products based on the problem statement and solution features.
-
-    //   Task:
-    //   Select relevant products from the list of products that you are 100% sure is relevant to the problem statement and solution features. Include products that have been recommended by an AI agent in the chat history.
-    //   Output nothing if you think none of the products are relevant.
-    //   Respond only with the list of product names. Do not include any preamble or explanation`,
-    //   this.productDocs,
-    //   this.productMap,
-    // );
     this.displayedProductsUpdaterNode = new DisplayedResponseUpdaterNode(
-      'lastGeneratedProducts',
+      'lastGeneratedProductIds',
       (stateValue) => {
         // if (stateValue && stateValue.length > 0) {
-        setDisplayedProducts(stateValue);
+        const productIdsArr = stateValue['lastGeneratedProductIds']?.productIds
+          .filter((obj) => obj.score > 0.7)
+          .map((obj) => obj.productId);
+        const productIdsSet = new Set(productIdsArr);
+        setDisplayedProducts(Array.from(productIdsSet));
         // }
       },
     );
 
+    this.featuresProductsMappingAgentNode =
+      new FeaturesProductsMappingAgentNode(
+        getOpenAIModel(0).withStructuredOutput(
+          getRequirementProductMappingAgentOutputSchema([]),
+          {
+            strict: true,
+          },
+        ),
+        'lastGeneratedRequirementsToProducts',
+        featuresProductsMappingAgentPrompt,
+        this.productDocs,
+        this.productMap,
+      );
+
     const langgraph = new StateGraph(StateSchema)
-      .addNode('chatAgent', this.chatAgentNode.invoke)
-      .addNode('displayedChatUpdater', this.displayedChatUpdaterNode.invoke)
-      .addNode('problemAgent', this.problemAgentNode.invoke)
+      .addNode(
+        'problemConstructorAgent',
+        this.problemConstructorAgentNode.invoke.bind(
+          this.problemConstructorAgentNode,
+        ),
+      )
+      .addNode('chatAgent', this.chatAgentNode.invoke.bind(this.chatAgentNode))
+      .addNode(
+        'displayedProblemPartsUpdater',
+        this.displayedProblemPartsUpdaterNode.invoke.bind(
+          this.displayedProblemPartsUpdaterNode,
+        ),
+      )
+      .addNode(
+        'displayedChatUpdater',
+        this.displayedChatUpdaterNode.invoke.bind(
+          this.displayedChatUpdaterNode,
+        ),
+      )
+      .addNode(
+        'problemAgent',
+        this.problemAgentNode.invoke.bind(this.problemAgentNode),
+      )
       .addNode(
         'displayedProblemUpdater',
         this.displayedProblemUpdaterNode.invoke,
       )
-      .addNode('featuresAgent', this.featuresAgentNode.invoke)
+      .addNode(
+        'featuresAgent',
+        this.featuresAgentNode.invoke.bind(this.featuresAgentNode),
+      )
+      .addNode(
+        'productsAgent',
+        this.productsAgentNode.invoke.bind(this.productsAgentNode),
+      )
+      .addNode(
+        'displayedProductsUpdater',
+        this.displayedProductsUpdaterNode.invoke.bind(
+          this.displayedProductsUpdaterNode,
+        ),
+      )
+      .addNode(
+        'featuresProductsMappingAgent',
+        this.featuresProductsMappingAgentNode.invoke.bind(
+          this.featuresProductsMappingAgentNode,
+        ),
+      )
       .addNode(
         'displayedFeaturesUpdater',
         this.displayedFeaturesUpdaterNode.invoke,
       )
-      .addNode('productsAgent', this.productsAgentNode.invoke)
-      .addNode(
-        'displayedProductsUpdater',
-        this.displayedProductsUpdaterNode.invoke,
-      )
 
-      .addEdge('__start__', 'chatAgent')
-      .addEdge('chatAgent', 'displayedChatUpdater')
+      .addEdge('__start__', 'problemConstructorAgent')
+      .addEdge('problemConstructorAgent', 'chatAgent')
+      .addEdge('chatAgent', 'displayedProblemPartsUpdater')
+      .addEdge('displayedProblemPartsUpdater', 'displayedChatUpdater')
       .addEdge('displayedChatUpdater', 'problemAgent')
       .addEdge('problemAgent', 'displayedProblemUpdater')
       .addEdge('displayedProblemUpdater', 'featuresAgent')
-      .addEdge('featuresAgent', 'displayedFeaturesUpdater')
-      .addEdge('displayedFeaturesUpdater', 'productsAgent')
+      .addEdge('featuresAgent', 'productsAgent')
       .addEdge('productsAgent', 'displayedProductsUpdater')
-      .addEdge('displayedProductsUpdater', 'chatAgent');
+      .addEdge('displayedProductsUpdater', 'featuresProductsMappingAgent')
+      .addEdge('featuresProductsMappingAgent', 'displayedFeaturesUpdater')
+      .addEdge('displayedFeaturesUpdater', 'problemConstructorAgent');
 
     this.app = langgraph.compile({
       checkpointer: new MemorySaver(),
-      interruptAfter: ['displayedProductsUpdater'],
+      interruptAfter: ['displayedFeaturesUpdater'],
     });
   }
 

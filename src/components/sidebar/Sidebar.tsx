@@ -10,9 +10,16 @@ import SolutionRequirements from './SolutionRequirements';
 
 interface SidebarProps {
   problem: string | undefined;
+  problemScores: {
+    who: number;
+    what: number;
+    where: number;
+    when: number;
+    why: number;
+  };
   features: string | undefined;
-  products: string[] | undefined;
-  productMap: Record<string, Product> | undefined;
+  productIds: number[] | undefined;
+  productMap: Map<number, Product> | undefined;
   isStreamingProblem: boolean;
   isStreamingFeatures: boolean;
   isProblemAgentLoading: boolean;
@@ -22,8 +29,9 @@ interface SidebarProps {
 
 function Sidebar({
   problem,
+  problemScores,
   features,
-  products,
+  productIds,
   productMap,
   isStreamingProblem,
   isStreamingFeatures,
@@ -66,10 +74,10 @@ function Sidebar({
   }, [features]);
 
   useEffect(() => {
-    if (products && activeTab !== 'products') {
+    if (productIds && activeTab !== 'products') {
       setAreProductsViewed(false);
     }
-  }, [products]);
+  }, [productIds]);
 
   return (
     <Tabs
@@ -105,6 +113,7 @@ function Sidebar({
       <Tabs.Panel value="problem" h="100%">
         <ProblemStatement
           problem={problem}
+          problemScores={problemScores}
           isWaitingForUpdate={isProblemAgentLoading && !isStreamingProblem}
         />
       </Tabs.Panel>
@@ -117,7 +126,7 @@ function Sidebar({
       <Tabs.Panel value="products" h="100%">
         <RecommendedProducts
           productMap={productMap}
-          recommendedProducts={products}
+          recommendedProductIds={productIds}
           isWaitingForUpdate={isProductsAgentLoading}
         />
       </Tabs.Panel>

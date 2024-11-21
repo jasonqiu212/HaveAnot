@@ -1,15 +1,16 @@
 import { BaseLanguageModelInput } from '@langchain/core/language_models/base';
-import { AIMessageChunk, SystemMessage } from '@langchain/core/messages';
-import { Runnable } from '@langchain/core/runnables';
-import { ChatOpenAICallOptions } from '@langchain/openai';
+import { SystemMessage } from '@langchain/core/messages';
+import { Runnable, RunnableConfig } from '@langchain/core/runnables';
 
 import { StateSchema } from '../Langgraph';
 
-export abstract class AgentNode<K extends keyof typeof StateSchema.State> {
+export abstract class StructuredOutputAgentNode<
+  K extends keyof typeof StateSchema.State,
+> {
   model: Runnable<
     BaseLanguageModelInput,
-    AIMessageChunk,
-    ChatOpenAICallOptions
+    (typeof StateSchema.State)[K],
+    RunnableConfig
   >;
   stateKey: K;
   systemPrompt: string;
@@ -17,8 +18,8 @@ export abstract class AgentNode<K extends keyof typeof StateSchema.State> {
   constructor(
     model: Runnable<
       BaseLanguageModelInput,
-      AIMessageChunk,
-      ChatOpenAICallOptions
+      (typeof StateSchema.State)[K],
+      RunnableConfig
     >,
     stateKey: K,
     systemPrompt: string,

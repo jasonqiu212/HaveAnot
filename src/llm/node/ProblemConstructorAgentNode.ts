@@ -1,24 +1,24 @@
 import { BaseLanguageModelInput } from '@langchain/core/language_models/base';
-import { AIMessageChunk, SystemMessage } from '@langchain/core/messages';
-import { Runnable } from '@langchain/core/runnables';
-import { ChatOpenAICallOptions } from '@langchain/openai';
+import { SystemMessage } from '@langchain/core/messages';
+import { Runnable, RunnableConfig } from '@langchain/core/runnables';
 
 import { StateSchema } from '../Langgraph';
-import { AgentNode } from './AgentNode';
+import { StructuredOutputAgentNode } from './StructuredOutputAgentNode';
 
-export class ChatAgentNode extends AgentNode<'lastGeneratedChat'> {
+export class ProblemConstructorAgentNode extends StructuredOutputAgentNode<'lastGeneratedProblemParts'> {
   constructor(
     model: Runnable<
       BaseLanguageModelInput,
-      AIMessageChunk,
-      ChatOpenAICallOptions
+      (typeof StateSchema.State)['lastGeneratedProblemParts'],
+      RunnableConfig
     >,
-    stateKey: 'lastGeneratedChat',
+    stateKey: 'lastGeneratedProblemParts',
     systemPrompt: string,
   ) {
     super(model, stateKey, systemPrompt);
   }
 
+  // exclude previously generated problem statement -> this is not necessary as it is only based on the previously generated problem parts
   override getSystemMessage(state: typeof StateSchema.State) {
     const whoScoreAndReason = state.lastGeneratedProblemParts?.who
       ? `(score: ${state.lastGeneratedProblemParts.who.score}, reason for score: ${state.lastGeneratedProblemParts.who.missing})`
@@ -46,18 +46,7 @@ export class ChatAgentNode extends AgentNode<'lastGeneratedChat'> {
         Where is the problem occurring?: ${state.lastGeneratedProblemParts?.where?.answer ?? '<empty>'} ${whereScoreAndReason})
         When does the problem occur?: ${state.lastGeneratedProblemParts?.when?.answer ?? '<empty>'} ${whenScoreAndReason})
         Why is the problem important or worth solving?: ${state.lastGeneratedProblemParts?.why?.answer ?? '<empty>'} ${whyScoreAndReason})
-      Problem: ${state.displayedResponses?.problem ?? '<empty>'}
       Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
       Suggested Products: ${state.displayedResponses?.productIds ?? '<empty>'}`);
-  }
-
-  override async invoke(state: typeof StateSchema.State) {
-    const superResponse = await super.invoke(state);
-
-    superResponse.chatHistory =
-      superResponse[this.stateKey] === undefined
-        ? []
-        : [superResponse[this.stateKey]!];
-    return superResponse;
   }
 }

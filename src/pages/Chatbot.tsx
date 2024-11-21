@@ -57,7 +57,7 @@ function Chatbot() {
     NodeJS.Timeout | undefined
   >();
 
-  const [products, setProducts] = useState<string[] | undefined>();
+  const [productIds, setProductIds] = useState<number[] | undefined>();
   // const [streamedProducts, setStreamedProducts] = useThrottledState<
   //   string | undefined
   // >(undefined, 20);
@@ -68,11 +68,25 @@ function Chatbot() {
   const [isFeaturesAgentLoading, setIsFeaturesAgentLoading] = useState(false);
   const [isProductsAgentLoading, setIsProductsAgentLoading] = useState(false);
 
+  const [problemScores, setProblemScores] = useState<{
+    who: number;
+    what: number;
+    where: number;
+    when: number;
+    why: number;
+  }>({
+    who: 0,
+    what: 0,
+    where: 0,
+    when: 0,
+    why: 0,
+  });
+
   const getDisplayedResponses = () => {
     return {
       problem: streamedProblem ?? problem,
       features: streamedFeatures ?? features,
-      products: products,
+      products: productIds,
     };
   };
 
@@ -82,10 +96,11 @@ function Chatbot() {
         setStreamedMessage,
         setStreamedProblem,
         setStreamedFeatures,
-        (products?: string[]) => {
-          products ? setProducts(products) : undefined;
+        (productIds?: number[]) => {
+          productIds ? setProductIds(productIds) : undefined;
           setIsProductsAgentLoading(false);
         },
+        setProblemScores,
         productMap,
       ),
     [productMap],
@@ -253,8 +268,9 @@ function Chatbot() {
       </Stack>
       <Sidebar
         problem={problem}
+        problemScores={problemScores}
         features={features}
-        products={products}
+        productIds={productIds}
         productMap={productMap}
         isStreamingProblem={streamedProblem !== undefined}
         isStreamingFeatures={streamedFeatures !== undefined}
