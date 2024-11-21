@@ -57,6 +57,10 @@ function Chatbot() {
     NodeJS.Timeout | undefined
   >();
 
+  const [featuresWithProductJSX, setFeaturesWithProductJSX] = useState<
+    string | undefined
+  >();
+
   const [productIds, setProductIds] = useState<number[] | undefined>();
   // const [streamedProducts, setStreamedProducts] = useThrottledState<
   //   string | undefined
@@ -96,6 +100,7 @@ function Chatbot() {
         setStreamedMessage,
         setStreamedProblem,
         setStreamedFeatures,
+        setFeaturesWithProductJSX,
         (productIds?: number[]) => {
           productIds ? setProductIds(productIds) : undefined;
           setIsProductsAgentLoading(false);
@@ -237,16 +242,16 @@ function Chatbot() {
     setStreamingFeaturesInterval(interval);
   }, [streamedFeatures]);
 
-  // // TODO: If no need streaming effect, can replace streamedProducts with products
-  // useEffect(() => {
-  //   if (streamedProducts === undefined) {
-  //     return;
-  //   }
-
-  //   setProducts(streamedProducts);
-  //   setStreamedProducts(undefined);
-  //   setIsProductsAgentLoading(false);
-  // }, [streamedProducts]);
+  // if streaming of features has ended and there are featuresWithProductJSX, set features to featuresWithProductJSX
+  useEffect(() => {
+    if (
+      streamingFeaturesInterval === undefined &&
+      streamedFeatures === undefined &&
+      featuresWithProductJSX !== undefined
+    ) {
+      setFeatures(featuresWithProductJSX);
+    }
+  }, [streamingFeaturesInterval, streamedFeatures, featuresWithProductJSX]);
 
   return (
     <Group h="100%" wrap="nowrap" gap="0px">

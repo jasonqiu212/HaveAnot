@@ -22,6 +22,7 @@ import {
 import {
   featuresAgentOutputSchema,
   getFeaturesFromOutputSchema,
+  getFeaturesWithProductJSXFromOutputSchemas,
   getOpenAIModel,
   getProductsAgentOutputSchema,
   getRequirementProductMappingAgentOutputSchema,
@@ -120,16 +121,18 @@ export class HaveAnotLanggraph {
     'lastGeneratedFeatures',
     featuresAgentPrompt,
   );
+  displayedFeaturesUpdaterNode: DisplayedResponseUpdaterNode;
 
   productsAgentNode: ProductsAgentNode;
   displayedProductsUpdaterNode: DisplayedResponseUpdaterNode;
 
   featuresProductsMappingAgentNode: FeaturesProductsMappingAgentNode;
-  displayedFeaturesUpdaterNode: DisplayedResponseUpdaterNode;
+  displayedFeaturesWithProductsUpdaterNode: DisplayedResponseUpdaterNode;
 
   setDisplayedChat: (chat: string) => void;
   setDisplayedProblem?: (problem: string) => void;
   setDisplayedFeatures?: (features: string) => void;
+  setFeaturesWithProductJSX?: (featuresWithProductJSX: string) => void;
   setDisplayedProducts?: (productIds: number[]) => void;
 
   setDisplayedProblemScores: (scores: {
@@ -149,6 +152,7 @@ export class HaveAnotLanggraph {
     setDisplayedChat: (chat: string) => void,
     setDisplayedProblem: (problem: string) => void,
     setDisplayedFeatures: (features: string) => void,
+    setFeaturesWithProductJSX: (featuresWithProductJSX: string) => void,
     setDisplayedProducts: (productIds: number[]) => void,
     setDisplayedProblemScores: (scores: {
       who: number;
@@ -162,6 +166,7 @@ export class HaveAnotLanggraph {
     this.setDisplayedChat = setDisplayedChat;
     this.setDisplayedProblem = setDisplayedProblem;
     this.setDisplayedFeatures = setDisplayedFeatures;
+    this.setFeaturesWithProductJSX = setFeaturesWithProductJSX;
     this.setDisplayedProducts = setDisplayedProducts;
     this.setDisplayedProblemScores = setDisplayedProblemScores;
 
@@ -218,22 +223,13 @@ export class HaveAnotLanggraph {
       },
     );
     this.displayedFeaturesUpdaterNode = new DisplayedResponseUpdaterNode(
-      'lastGeneratedRequirementsToProducts',
+      'lastGeneratedProductIds',
       (stateValue) => {
-        const requirements = stateValue['lastGeneratedFeatures'];
-        const products = stateValue['lastGeneratedProductIds'];
-
-        const requirementToProductMappings =
-          stateValue['lastGeneratedRequirementsToProducts'];
-
-        const featuresStr = getFeaturesFromOutputSchema(
-          requirements,
-          products,
-          requirementToProductMappings,
+        const featureStr = getFeaturesFromOutputSchema(
+          stateValue.lastGeneratedFeatures,
         );
-        if (featuresStr) {
-          console.log(featuresStr);
-          setDisplayedFeatures(featuresStr);
+        if (featureStr) {
+          setDisplayedFeatures(featureStr);
         }
       },
     );
@@ -253,7 +249,7 @@ export class HaveAnotLanggraph {
       (stateValue) => {
         // if (stateValue && stateValue.length > 0) {
         const productIdsArr = stateValue['lastGeneratedProductIds']?.productIds
-          .filter((obj) => obj.score > 0.7)
+          .filter((obj) => obj.score >= 0.7)
           .map((obj) => obj.productId);
         const productIdsSet = new Set(productIdsArr);
         setDisplayedProducts(Array.from(productIdsSet));
@@ -273,6 +269,26 @@ export class HaveAnotLanggraph {
         featuresProductsMappingAgentPrompt,
         this.productDocs,
         this.productMap,
+      );
+    this.displayedFeaturesWithProductsUpdaterNode =
+      new DisplayedResponseUpdaterNode(
+        'lastGeneratedRequirementsToProducts',
+        (stateValue) => {
+          const requirements = stateValue['lastGeneratedFeatures'];
+          const products = stateValue['lastGeneratedProductIds'];
+          const requirementToProductMappings =
+            stateValue['lastGeneratedRequirementsToProducts'];
+
+          const featuresWithProductJSX =
+            getFeaturesWithProductJSXFromOutputSchemas(
+              requirements,
+              products,
+              requirementToProductMappings,
+            );
+          if (featuresWithProductJSX) {
+            setFeaturesWithProductJSX(featuresWithProductJSX);
+          }
+        },
       );
 
     const langgraph = new StateGraph(StateSchema)
@@ -308,6 +324,10 @@ export class HaveAnotLanggraph {
         this.featuresAgentNode.invoke.bind(this.featuresAgentNode),
       )
       .addNode(
+        'displayedFeaturesUpdater',
+        this.displayedFeaturesUpdaterNode.invoke,
+      )
+      .addNode(
         'productsAgent',
         this.productsAgentNode.invoke.bind(this.productsAgentNode),
       )
@@ -324,8 +344,10 @@ export class HaveAnotLanggraph {
         ),
       )
       .addNode(
-        'displayedFeaturesUpdater',
-        this.displayedFeaturesUpdaterNode.invoke,
+        'displayedFeaturesWithProductsUpdater',
+        this.displayedFeaturesWithProductsUpdaterNode.invoke.bind(
+          this.displayedFeaturesWithProductsUpdaterNode,
+        ),
       )
 
       .addEdge('__start__', 'problemConstructorAgent')
@@ -335,15 +357,22 @@ export class HaveAnotLanggraph {
       .addEdge('displayedChatUpdater', 'problemAgent')
       .addEdge('problemAgent', 'displayedProblemUpdater')
       .addEdge('displayedProblemUpdater', 'featuresAgent')
-      .addEdge('featuresAgent', 'productsAgent')
+      .addEdge('featuresAgent', 'displayedFeaturesUpdater')
+      .addEdge('displayedFeaturesUpdater', 'productsAgent')
       .addEdge('productsAgent', 'displayedProductsUpdater')
       .addEdge('displayedProductsUpdater', 'featuresProductsMappingAgent')
-      .addEdge('featuresProductsMappingAgent', 'displayedFeaturesUpdater')
-      .addEdge('displayedFeaturesUpdater', 'problemConstructorAgent');
+      .addEdge(
+        'featuresProductsMappingAgent',
+        'displayedFeaturesWithProductsUpdater',
+      )
+      .addEdge(
+        'displayedFeaturesWithProductsUpdater',
+        'problemConstructorAgent',
+      );
 
     this.app = langgraph.compile({
       checkpointer: new MemorySaver(),
-      interruptAfter: ['displayedFeaturesUpdater'],
+      interruptAfter: ['displayedFeaturesWithProductsUpdater'],
     });
   }
 
