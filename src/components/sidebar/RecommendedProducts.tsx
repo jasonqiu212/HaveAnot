@@ -2,25 +2,7 @@ import { Box, LoadingOverlay, ScrollArea, Stack, Text } from '@mantine/core';
 import '@mantine/core/styles.css';
 
 import { Product } from '../../pages/Chatbot';
-// import GatherSGLogo from '../../assets/products/gather-sg.png';
-// import PostmanLogo from '../../assets/products/postman.png';
 import ProductCard from '../card/ProductCard';
-
-// const products: { [key: string]: Product } = {
-//   GatherSG: {
-//     name: 'GatherSG',
-//     description:
-//       'Lightweight Whole-of-Government customer relationship management system.',
-//     logoPath: GatherSGLogo,
-//     websiteLink: 'https://gather.gov.sg/',
-//   },
-//   Postman: {
-//     name: 'Postman',
-//     description: 'Secure, multichannel tool to send official communications.',
-//     logoPath: PostmanLogo,
-//     websiteLink: 'https://postman.gov.sg/',
-//   },
-// };
 
 interface RecommendedProductsProps {
   productMap: Map<number, Product> | undefined;
@@ -58,7 +40,6 @@ function RecommendedProducts({
                     key={index}
                     name={name}
                     description={description}
-                    // logoPath={logoPath}
                     websiteLink={websiteLink}
                   />
                 );
