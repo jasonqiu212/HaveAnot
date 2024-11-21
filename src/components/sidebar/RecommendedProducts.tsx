@@ -38,6 +38,7 @@ function RecommendedProducts({
                 return (
                   <ProductCard
                     key={index}
+                    productIndex={index}
                     name={name}
                     description={description}
                     websiteLink={websiteLink}

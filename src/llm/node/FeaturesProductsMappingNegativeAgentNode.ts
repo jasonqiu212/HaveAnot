@@ -8,7 +8,7 @@ import { Product } from '../../pages/Chatbot';
 import { StateSchema } from '../Langgraph';
 import {
   getOpenAIModel,
-  getRequirementProductsMappingAgentOutputSchema,
+  getRequirementProductMappingAgentOutputSchema,
 } from '../Utils';
 import { StructuredOutputAgentNode } from './StructuredOutputAgentNode';
 
@@ -90,7 +90,7 @@ export class FeaturesProductsMappingNegativeAgentNode extends StructuredOutputAg
     this.chosenProductIds = dedupProductIds;
 
     this.model = getOpenAIModel(0).withStructuredOutput(
-      getRequirementProductsMappingAgentOutputSchema(this.chosenProductIds),
+      getRequirementProductMappingAgentOutputSchema(this.chosenProductIds),
       { strict: true },
     );
 

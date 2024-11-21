@@ -150,14 +150,46 @@ export const featuresAgentOutputSchema = z.object({
 });
 
 export const getFeaturesFromOutputSchema = (
-  schema?: z.infer<typeof featuresAgentOutputSchema>,
-): string | undefined =>
-  schema?.requirementGroups
+  requirements?: z.infer<typeof featuresAgentOutputSchema>,
+  products?: z.infer<ReturnType<typeof getProductsAgentOutputSchema>>,
+  requirementProductMappings?: z.infer<
+    ReturnType<typeof getRequirementProductMappingAgentOutputSchema>
+  >,
+): string | undefined => {
+  const requirementGroups = requirements?.requirementGroups;
+  if (!requirementGroups) {
+    return undefined;
+  }
+
+  const filteredProducts = products?.productIds
+    ?.filter((product) => product.score > 0.7)
+    .map((product) => product.productId);
+
+  const filteredRequirementProductMappings =
+    requirementProductMappings?.requirementsToProductMappings
+      ?.filter((mapping) => mapping.score > 0.7)
+      .filter((mapping) => filteredProducts?.includes(mapping.productId));
+
+  return requirementGroups
     .map(
-      ({ header, features }) =>
-        `**${header}**  \n  ${features.map((obj, i) => `${i + 1}. ${obj.feature}`).join('  \n')}`,
+      ({ uniqueId: requirementGroupUniqueId, header, features }) =>
+        `**${header}**\n${features
+          .map(({ uniqueId: featureUniqueId, feature }, i) => {
+            const matchedMapping = filteredRequirementProductMappings?.find(
+              (mapping) =>
+                mapping.uniqueIdRequirementGroup === requirementGroupUniqueId &&
+                mapping.uniqueIdFeature === featureUniqueId,
+            );
+
+            if (matchedMapping && filteredProducts) {
+              return `${i + 1}. ${feature} <ProductHoverCard productId="${matchedMapping.productId}" label="${filteredProducts.indexOf(matchedMapping.productId) + 1}" />`;
+            }
+            return `${i + 1}. ${feature}`;
+          })
+          .join('\n')}`,
     )
-    .join('  \n  \n');
+    .join('\n\n');
+};
 
 export const getProductsAgentOutputSchema = (
   potentialProductsIds: Array<number>,
@@ -184,7 +216,7 @@ export const getProductsAgentOutputSchema = (
     ),
   });
 
-export const getRequirementProductsMappingAgentOutputSchema = (
+export const getRequirementProductMappingAgentOutputSchema = (
   potentialProductsIds: Array<number>,
 ) =>
   z.object({

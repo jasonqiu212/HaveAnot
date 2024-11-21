@@ -1,15 +1,25 @@
 import { Badge, Group, HoverCard, Stack, Text, Title } from '@mantine/core';
 import '@mantine/core/styles.css';
 import { useDisclosure } from '@mantine/hooks';
+import { useContext } from 'react';
+
+import { ProductMapContext } from '../App';
 
 interface ProductHoverCardProps {
+  productId: string;
   label: string;
 }
 
-function ProductHoverCard({ label }: ProductHoverCardProps) {
+function ProductHoverCard({ productId, label }: ProductHoverCardProps) {
   const [isHovering, { open: onMouseEnter, close: onMouseLeave }] =
     useDisclosure(false);
+  const productMap = useContext(ProductMapContext);
 
+  if (!productMap || !productMap.has(parseInt(productId))) {
+    return null;
+  }
+
+  const product = productMap.get(parseInt(productId))!;
   return (
     <HoverCard width={320} shadow="md">
       <HoverCard.Target>
@@ -19,6 +29,7 @@ function ProductHoverCard({ label }: ProductHoverCardProps) {
           circle
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
+          style={{ display: 'inline-flex' }}
         >
           {label}
         </Badge>
@@ -26,14 +37,13 @@ function ProductHoverCard({ label }: ProductHoverCardProps) {
       <HoverCard.Dropdown>
         <Stack gap="xs">
           <Group>
-            <img src="/products/FormSG.png" height="24px" />
+            <img src={`/products/${product.Product}.png`} height="24px" />
             <Title order={5} c="gray.9">
-              FormSG
+              {product.Product}
             </Title>
           </Group>
           <Text c="gray.9" lineClamp={4}>
-            Hover card is revealed when user hovers over target element, it will
-            be hidden once mouse is not over both target and dropdown elements
+            {product['Short description']}
           </Text>
         </Stack>
       </HoverCard.Dropdown>

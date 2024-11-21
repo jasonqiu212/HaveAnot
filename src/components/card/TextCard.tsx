@@ -1,6 +1,8 @@
 import { LoadingOverlay, Paper, Text } from '@mantine/core';
 import '@mantine/core/styles.css';
-import ReactMarkdown from 'react-markdown';
+import Markdown from 'markdown-to-jsx';
+
+import ProductHoverCard from '../ProductHoverCard';
 
 interface ProductCardProps {
   text: string;
@@ -23,7 +25,17 @@ function TextCard({ text, isWaitingForUpdate }: ProductCardProps) {
         opacity="60%"
       />
       <Text c="gray.9">
-        <ReactMarkdown>{text}</ReactMarkdown>
+        <Markdown
+          options={{
+            overrides: {
+              ProductHoverCard: {
+                component: ProductHoverCard,
+              },
+            },
+          }}
+        >
+          {text}
+        </Markdown>
       </Text>
     </Paper>
   );
