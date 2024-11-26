@@ -249,7 +249,7 @@ export class HaveAnotLanggraph {
       (stateValue) => {
         // if (stateValue && stateValue.length > 0) {
         const productIdsArr = stateValue['lastGeneratedProductIds']?.productIds
-          .filter((obj) => obj.score >= 0.7)
+          .filter((obj) => obj.score >= 0.6)
           .map((obj) => obj.productId);
         const productIdsSet = new Set(productIdsArr);
         setDisplayedProducts(Array.from(productIdsSet));
