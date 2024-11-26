@@ -150,6 +150,17 @@ export const featuresAgentOutputSchema = z.object({
 });
 
 export const getFeaturesFromOutputSchema = (
+  schema?: z.infer<typeof featuresAgentOutputSchema>,
+): string | undefined =>
+  schema?.requirementGroups
+    .map(
+      ({ header, features }) =>
+        `### ${header}\n\n${features.map(({ feature }, i) => `${i + 1}. ${feature}`).join('\n')}`,
+    )
+    .join('\n\n');
+
+// adds <ProductHoverCard /> JSX to features that have a product mapping, then calls getFeaturesFromOutputSchema
+export const getFeaturesWithProductJSXFromOutputSchemas = (
   requirements?: z.infer<typeof featuresAgentOutputSchema>,
   products?: z.infer<ReturnType<typeof getProductsAgentOutputSchema>>,
   requirementProductMappings?: z.infer<
@@ -157,38 +168,48 @@ export const getFeaturesFromOutputSchema = (
   >,
 ): string | undefined => {
   const requirementGroups = requirements?.requirementGroups;
-  if (!requirementGroups) {
+  const productIds = products?.productIds.map((product) => product.productId);
+  if (!requirementGroups || !productIds) {
     return undefined;
   }
 
-  const filteredProducts = products?.productIds
-    ?.filter((product) => product.score > 0.7)
-    .map((product) => product.productId);
-
   const filteredRequirementProductMappings =
-    requirementProductMappings?.requirementsToProductMappings
-      ?.filter((mapping) => mapping.score > 0.7)
-      .filter((mapping) => filteredProducts?.includes(mapping.productId));
+    requirementProductMappings?.requirementsToProductMappings?.filter(
+      (mapping) => mapping.score >= 0.7,
+    );
+  const requirementGroupsWithProductJSX = requirementGroups.map(
+    ({ uniqueId: requirementGroupUniqueId, header, features }) => {
+      const featuresWithProductJSX = features.map(
+        ({ uniqueId: featureUniqueId, feature }) => {
+          const matchedMapping = filteredRequirementProductMappings?.find(
+            (mapping) =>
+              mapping.uniqueIdRequirementGroup === requirementGroupUniqueId &&
+              mapping.uniqueIdFeature === featureUniqueId,
+          );
+          if (matchedMapping) {
+            return {
+              uniqueId: featureUniqueId,
+              feature:
+                feature +
+                ` <ProductHoverCard productId="${matchedMapping.productId}" label="${productIds.indexOf(matchedMapping.productId) + 1}" />`,
+            };
+          } else {
+            return { uniqueId: featureUniqueId, feature };
+          }
+        },
+      );
 
-  return requirementGroups
-    .map(
-      ({ uniqueId: requirementGroupUniqueId, header, features }) =>
-        `**${header}**\n${features
-          .map(({ uniqueId: featureUniqueId, feature }, i) => {
-            const matchedMapping = filteredRequirementProductMappings?.find(
-              (mapping) =>
-                mapping.uniqueIdRequirementGroup === requirementGroupUniqueId &&
-                mapping.uniqueIdFeature === featureUniqueId,
-            );
+      return {
+        uniqueId: requirementGroupUniqueId,
+        header: header,
+        features: featuresWithProductJSX,
+      };
+    },
+  );
 
-            if (matchedMapping && filteredProducts) {
-              return `${i + 1}. ${feature} <ProductHoverCard productId="${matchedMapping.productId}" label="${filteredProducts.indexOf(matchedMapping.productId) + 1}" />`;
-            }
-            return `${i + 1}. ${feature}`;
-          })
-          .join('\n')}`,
-    )
-    .join('\n\n');
+  return getFeaturesFromOutputSchema({
+    requirementGroups: requirementGroupsWithProductJSX,
+  });
 };
 
 export const getProductsAgentOutputSchema = (
