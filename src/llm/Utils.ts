@@ -175,7 +175,7 @@ export const getFeaturesWithProductJSXFromOutputSchemas = (
 
   const filteredRequirementProductMappings =
     requirementProductMappings?.requirementsToProductMappings?.filter(
-      (mapping) => mapping.score >= 0.7,
+      (mapping) => mapping.score >= 0.5,
     );
   const requirementGroupsWithProductJSX = requirementGroups.map(
     ({ uniqueId: requirementGroupUniqueId, header, features }) => {
