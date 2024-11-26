@@ -35,7 +35,7 @@ export class FeaturesProductsMappingNegativeAgentNode extends StructuredOutputAg
     this.chosenProductIds = [];
   }
 
-  override getSystemMessage(state: typeof StateSchema.State) {
+  override getSystemMessages(state: typeof StateSchema.State) {
     const systemMessage = new SystemMessage(
       `${this.systemPrompt}
 
@@ -79,7 +79,7 @@ export class FeaturesProductsMappingNegativeAgentNode extends StructuredOutputAg
       'FeaturesProductsMappingNegativeAgentNode systemMessage:',
       systemMessage,
     );
-    return systemMessage;
+    return [systemMessage];
   }
 
   override async invoke(state: typeof StateSchema.State) {

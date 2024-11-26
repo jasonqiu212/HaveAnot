@@ -4,6 +4,7 @@ import { Runnable } from '@langchain/core/runnables';
 import { ChatOpenAICallOptions } from '@langchain/openai';
 
 import { StateSchema } from '../Langgraph';
+import { problemAgentExamples } from '../Prompts';
 import { AgentNode } from './AgentNode';
 
 export class ProblemAgentNode extends AgentNode<'lastGeneratedProblem'> {
@@ -19,7 +20,7 @@ export class ProblemAgentNode extends AgentNode<'lastGeneratedProblem'> {
     super(model, stateKey, systemPrompt);
   }
 
-  override getSystemMessage(state: typeof StateSchema.State) {
+  override getSystemMessages(state: typeof StateSchema.State) {
     const whoScoreAndReason = state.lastGeneratedProblemParts?.who
       ? `(score: ${state.lastGeneratedProblemParts.who.score}, reason for score: ${state.lastGeneratedProblemParts.who.missing})`
       : '';
@@ -36,7 +37,9 @@ export class ProblemAgentNode extends AgentNode<'lastGeneratedProblem'> {
       ? `(score: ${state.lastGeneratedProblemParts.why.score}, reason for score: ${state.lastGeneratedProblemParts.why.missing})`
       : '';
 
-    return new SystemMessage(`
+    return [
+      new SystemMessage(problemAgentExamples),
+      new SystemMessage(`
       ${this.systemPrompt}
 
       Here are the previously generated states:
@@ -49,14 +52,15 @@ export class ProblemAgentNode extends AgentNode<'lastGeneratedProblem'> {
       
       Here is the previously generated problem statement:
       Problem: ${state.lastGeneratedProblem?.content ?? '<empty>'}
-      `);
+      `),
+    ];
   }
 
   // don't include the chat history with the user
-  // so that problem statement generated is solely based on ProblemConstrucotrAgent's responses, and the previously response of this ProblemAgent
+  // so that problem statement generated is solely based on ProblemConstrucotrAgent's responses, and the previous response of this ProblemAgent
   override async invoke(state: typeof StateSchema.State) {
-    const systemMessage = this.getSystemMessage(state);
-    const response = await this.model.invoke([systemMessage]);
+    const systemMessages = this.getSystemMessages(state);
+    const response = await this.model.invoke(systemMessages);
 
     return { [this.stateKey]: response };
   }

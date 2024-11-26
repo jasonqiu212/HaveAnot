@@ -4,6 +4,7 @@ import { Runnable } from '@langchain/core/runnables';
 import { ChatOpenAICallOptions } from '@langchain/openai';
 
 import { StateSchema } from '../Langgraph';
+import { chatAgentExamples } from '../Prompts';
 import { AgentNode } from './AgentNode';
 
 export class ChatAgentNode extends AgentNode<'lastGeneratedChat'> {
@@ -19,7 +20,7 @@ export class ChatAgentNode extends AgentNode<'lastGeneratedChat'> {
     super(model, stateKey, systemPrompt);
   }
 
-  override getSystemMessage(state: typeof StateSchema.State) {
+  override getSystemMessages(state: typeof StateSchema.State) {
     const whoScoreAndReason = state.lastGeneratedProblemParts?.who
       ? `(score: ${state.lastGeneratedProblemParts.who.score}, reason for score: ${state.lastGeneratedProblemParts.who.missing})`
       : '';
@@ -36,7 +37,9 @@ export class ChatAgentNode extends AgentNode<'lastGeneratedChat'> {
       ? `(score: ${state.lastGeneratedProblemParts.why.score}, reason for score: ${state.lastGeneratedProblemParts.why.missing})`
       : '';
 
-    return new SystemMessage(`
+    return [
+      new SystemMessage(chatAgentExamples),
+      new SystemMessage(`
       ${this.systemPrompt}
 
       Here are the previously generated states:
@@ -48,7 +51,8 @@ export class ChatAgentNode extends AgentNode<'lastGeneratedChat'> {
         Why is the problem important or worth solving?: ${state.lastGeneratedProblemParts?.why?.answer ?? '<empty>'} ${whyScoreAndReason})
       Problem: ${state.displayedResponses?.problem ?? '<empty>'}
       Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
-      Suggested Products: ${state.displayedResponses?.productIds ?? '<empty>'}`);
+      Suggested Products: ${state.displayedResponses?.productIds ?? '<empty>'}`),
+    ];
   }
 
   override async invoke(state: typeof StateSchema.State) {

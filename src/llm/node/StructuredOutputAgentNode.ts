@@ -29,7 +29,7 @@ export abstract class StructuredOutputAgentNode<
     this.systemPrompt = systemPrompt;
   }
 
-  abstract getSystemMessage(state: typeof StateSchema.State): SystemMessage;
+  abstract getSystemMessages(state: typeof StateSchema.State): SystemMessage[];
 
   // returns a Promise of a partial StateSchema.State object, containing the key of this.stateKey, and optionally containing the rest of the keys
   async invoke(
@@ -38,10 +38,10 @@ export abstract class StructuredOutputAgentNode<
     Pick<typeof StateSchema.State, K> &
       Partial<Omit<typeof StateSchema.State, K>>
   > {
-    const systemMessage = this.getSystemMessage(state);
+    const systemMessages = this.getSystemMessages(state);
 
     const messages = [
-      systemMessage,
+      ...systemMessages,
       // for all tool messages, set their content field as '' if it is undefined
       ...(state.chatHistory ?? []).map((message) => {
         if (message._getType() === 'tool' && message.content === undefined) {
