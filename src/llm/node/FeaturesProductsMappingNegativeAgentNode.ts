@@ -83,7 +83,7 @@ export class FeaturesProductsMappingNegativeAgentNode extends StructuredOutputAg
 
   override async invoke(state: typeof StateSchema.State) {
     const productIdsArr = state.lastGeneratedProductIds?.productIds
-      .filter((obj) => obj.score > 0.7)
+      .filter((obj) => obj.score > 0.6)
       .map((obj) => obj.productId);
     const productIdsSet = new Set(productIdsArr);
     const dedupProductIds = Array.from(productIdsSet);
