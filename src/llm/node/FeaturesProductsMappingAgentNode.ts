@@ -9,6 +9,7 @@ import { StateSchema } from '../Langgraph';
 import {
   getOpenAIModel,
   getRequirementProductMappingAgentOutputSchema,
+  getUniqueProductsToBeDisplayedByScore,
 } from '../Utils';
 import { StructuredOutputAgentNode } from './StructuredOutputAgentNode';
 
@@ -77,11 +78,9 @@ export class FeaturesProductsMappingAgentNode extends StructuredOutputAgentNode<
   }
 
   override async invoke(state: typeof StateSchema.State) {
-    const productIdsArr = state.lastGeneratedProductIds?.productIds
-      .filter((obj) => obj.score > 0.6)
-      .map((obj) => obj.productId);
-    const productIdsSet = new Set(productIdsArr);
-    const dedupProductIds = Array.from(productIdsSet);
+    const dedupProductIds = getUniqueProductsToBeDisplayedByScore(
+      state.lastGeneratedProductIds,
+    ).productIds.map((obj) => obj.productId);
     this.chosenProductIds = dedupProductIds;
 
     this.model = getOpenAIModel(0).withStructuredOutput(

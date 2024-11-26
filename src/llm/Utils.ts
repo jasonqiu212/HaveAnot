@@ -149,6 +149,23 @@ export const featuresAgentOutputSchema = z.object({
   ),
 });
 
+export const getUniqueProductsToBeDisplayedByScore = (
+  products?: z.infer<ReturnType<typeof getProductsAgentOutputSchema>>,
+) => {
+  const MIN_SCORE_DISPLAYED_PRODUCT_ID = 0.6;
+
+  const productIdsSet = new Set(
+    products?.productIds.map((obj) => obj.productId),
+  );
+  const uniqueFilteredProducts =
+    products?.productIds.filter(
+      (obj) =>
+        productIdsSet.delete(obj.productId) &&
+        obj.score >= MIN_SCORE_DISPLAYED_PRODUCT_ID,
+    ) ?? [];
+  return { productIds: uniqueFilteredProducts };
+};
+
 export const getFeaturesFromOutputSchema = (
   schema?: z.infer<typeof featuresAgentOutputSchema>,
 ): string | undefined =>
@@ -159,29 +176,47 @@ export const getFeaturesFromOutputSchema = (
     )
     .join('\n\n');
 
+export const getRequirementProductMappingsToBeDisplayedByScore = (
+  requirementProductMappings?: z.infer<
+    ReturnType<typeof getRequirementProductMappingAgentOutputSchema>
+  >,
+) => {
+  const MIN_SCORE_DISPLAYED_REQUIREMENT_PRODUCT_MAPPING = 0.7;
+
+  const filteredRequirementProductMappings =
+    requirementProductMappings?.requirementsToProductMappings?.filter(
+      (obj) => obj.score >= MIN_SCORE_DISPLAYED_REQUIREMENT_PRODUCT_MAPPING,
+    ) ?? [];
+  return {
+    requirementsToProductMappings: filteredRequirementProductMappings,
+  };
+};
+
 // adds <ProductHoverCard /> JSX to features that have a product mapping, then calls getFeaturesFromOutputSchema
 export const getFeaturesWithProductJSXFromOutputSchemas = (
   requirements?: z.infer<typeof featuresAgentOutputSchema>,
-  products?: z.infer<ReturnType<typeof getProductsAgentOutputSchema>>,
+  displayedProducts?: z.infer<ReturnType<typeof getProductsAgentOutputSchema>>,
   requirementProductMappings?: z.infer<
     ReturnType<typeof getRequirementProductMappingAgentOutputSchema>
   >,
 ): string | undefined => {
   const requirementGroups = requirements?.requirementGroups;
-  const productIds = products?.productIds.map((product) => product.productId);
-  if (!requirementGroups || !productIds) {
+  const displayedProductIds = displayedProducts?.productIds.map(
+    (product) => product.productId,
+  );
+  if (!requirementGroups || !displayedProductIds) {
     return undefined;
   }
 
-  const filteredRequirementProductMappings =
-    requirementProductMappings?.requirementsToProductMappings?.filter(
-      (mapping) => mapping.score >= 0.6,
-    );
+  const requirementProductMappingsToBeDisplayed =
+    getRequirementProductMappingsToBeDisplayedByScore(
+      requirementProductMappings,
+    ).requirementsToProductMappings;
   const requirementGroupsWithProductJSX = requirementGroups.map(
     ({ uniqueId: requirementGroupUniqueId, header, features }) => {
       const featuresWithProductJSX = features.map(
         ({ uniqueId: featureUniqueId, feature }) => {
-          const matchedMapping = filteredRequirementProductMappings?.find(
+          const matchedMapping = requirementProductMappingsToBeDisplayed?.find(
             (mapping) =>
               mapping.uniqueIdRequirementGroup === requirementGroupUniqueId &&
               mapping.uniqueIdFeature === featureUniqueId,
@@ -191,7 +226,7 @@ export const getFeaturesWithProductJSXFromOutputSchemas = (
               uniqueId: featureUniqueId,
               feature:
                 feature +
-                ` <ProductHoverCard productId="${matchedMapping.productId}" label="${productIds.indexOf(matchedMapping.productId) + 1}" />`,
+                ` <ProductHoverCard productId="${matchedMapping.productId}" label="${displayedProductIds.indexOf(matchedMapping.productId) + 1}" />`,
             };
           } else {
             return { uniqueId: featureUniqueId, feature };
