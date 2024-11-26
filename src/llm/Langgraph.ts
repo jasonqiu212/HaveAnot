@@ -26,6 +26,7 @@ import {
   getOpenAIModel,
   getProductsAgentOutputSchema,
   getRequirementProductMappingAgentOutputSchema,
+  getUniqueProductsToBeDisplayedByScore,
   problemConstructorAgentOutputSchema,
 } from './Utils';
 import { ChatAgentNode } from './node/ChatAgentNode';
@@ -248,11 +249,10 @@ export class HaveAnotLanggraph {
       'lastGeneratedProductIds',
       (stateValue) => {
         // if (stateValue && stateValue.length > 0) {
-        const productIdsArr = stateValue['lastGeneratedProductIds']?.productIds
-          .filter((obj) => obj.score >= 0.6)
-          .map((obj) => obj.productId);
-        const productIdsSet = new Set(productIdsArr);
-        setDisplayedProducts(Array.from(productIdsSet));
+        const displayedProductIds = getUniqueProductsToBeDisplayedByScore(
+          stateValue['lastGeneratedProductIds'],
+        ).productIds.map((obj) => obj.productId);
+        setDisplayedProducts(displayedProductIds);
         // }
       },
     );
@@ -275,14 +275,16 @@ export class HaveAnotLanggraph {
         'lastGeneratedRequirementsToProducts',
         (stateValue) => {
           const requirements = stateValue['lastGeneratedFeatures'];
-          const products = stateValue['lastGeneratedProductIds'];
+          const displayedProducts = getUniqueProductsToBeDisplayedByScore(
+            stateValue['lastGeneratedProductIds'],
+          );
           const requirementToProductMappings =
             stateValue['lastGeneratedRequirementsToProducts'];
 
           const featuresWithProductJSX =
             getFeaturesWithProductJSXFromOutputSchemas(
               requirements,
-              products,
+              displayedProducts,
               requirementToProductMappings,
             );
           if (featuresWithProductJSX) {
