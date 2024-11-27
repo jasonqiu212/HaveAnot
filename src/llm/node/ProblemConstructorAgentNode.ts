@@ -3,6 +3,7 @@ import { SystemMessage } from '@langchain/core/messages';
 import { Runnable, RunnableConfig } from '@langchain/core/runnables';
 
 import { StateSchema } from '../Langgraph';
+import { problemConstructorAgentExamples } from '../Prompts';
 import { StructuredOutputAgentNode } from './StructuredOutputAgentNode';
 
 export class ProblemConstructorAgentNode extends StructuredOutputAgentNode<'lastGeneratedProblemParts'> {
@@ -19,7 +20,7 @@ export class ProblemConstructorAgentNode extends StructuredOutputAgentNode<'last
   }
 
   // exclude previously generated problem statement -> this is not necessary as it is only based on the previously generated problem parts
-  override getSystemMessage(state: typeof StateSchema.State) {
+  override getSystemMessages(state: typeof StateSchema.State) {
     const whoScoreAndReason = state.lastGeneratedProblemParts?.who
       ? `(score: ${state.lastGeneratedProblemParts.who.score}, reason for score: ${state.lastGeneratedProblemParts.who.missing})`
       : '';
@@ -36,7 +37,9 @@ export class ProblemConstructorAgentNode extends StructuredOutputAgentNode<'last
       ? `(score: ${state.lastGeneratedProblemParts.why.score}, reason for score: ${state.lastGeneratedProblemParts.why.missing})`
       : '';
 
-    return new SystemMessage(`
+    return [
+      new SystemMessage(problemConstructorAgentExamples),
+      new SystemMessage(`
       ${this.systemPrompt}
 
       Here are the previously generated states:
@@ -47,6 +50,7 @@ export class ProblemConstructorAgentNode extends StructuredOutputAgentNode<'last
         When does the problem occur?: ${state.lastGeneratedProblemParts?.when?.answer ?? '<empty>'} ${whenScoreAndReason})
         Why is the problem important or worth solving?: ${state.lastGeneratedProblemParts?.why?.answer ?? '<empty>'} ${whyScoreAndReason})
       Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
-      Suggested Products: ${state.displayedResponses?.productIds ?? '<empty>'}`);
+      Suggested Products: ${state.displayedResponses?.productIds ?? '<empty>'}`),
+    ];
   }
 }

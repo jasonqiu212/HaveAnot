@@ -20,9 +20,10 @@ export class FeaturesAgentNode extends StructuredOutputAgentNode<'lastGeneratedF
     super(model, stateKey, systemPrompt);
   }
 
-  override getSystemMessage(state: typeof StateSchema.State) {
-    return new SystemMessage(
-      `${this.systemPrompt}
+  override getSystemMessages(state: typeof StateSchema.State) {
+    return [
+      new SystemMessage(
+        `${this.systemPrompt}
 
       Here is the latest problem statement:
       ${state.lastGeneratedProblem?.content ?? '<empty>'}
@@ -34,6 +35,7 @@ export class FeaturesAgentNode extends StructuredOutputAgentNode<'lastGeneratedF
       Problem: ${state.displayedResponses?.problem ?? '<empty>'}
       Suggested Solution Features: ${state.displayedResponses?.features ?? '<empty>'}
       Suggested Products: ${state.displayedResponses?.productIds ?? '<empty>'}`,
-    );
+      ),
+    ];
   }
 }

@@ -75,7 +75,7 @@ export class ProductsAgentNode extends StructuredOutputAgentNode<'lastGeneratedP
       Suggested Products: ${state.displayedResponses?.productIds ?? '<empty>'}`;
   }
 
-  override getSystemMessage(state: typeof StateSchema.State) {
+  override getSystemMessages(state: typeof StateSchema.State) {
     const systemMessage = new SystemMessage(
       `${this.systemPrompt}
 
@@ -84,7 +84,7 @@ export class ProductsAgentNode extends StructuredOutputAgentNode<'lastGeneratedP
 
       ${this.getCommonSystemMessageString(state)}`,
     );
-    return systemMessage;
+    return [systemMessage];
   }
 
   getSystemMessageForRAG(state: typeof StateSchema.State) {
