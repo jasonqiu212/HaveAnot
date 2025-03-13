@@ -19,13 +19,15 @@ git clone https://github.com/jasonqiu212/HaveAnot.git
 cd HaveAnot
 ```
 
-2. Install the required dependencies.
+2. Create a `.env` file to store environment variables using `.env.sample` as a reference.
+
+3. Install the required dependencies.
 
 ```bash
 npm install
 ```
 
-3. Start the development server.
+4. Start the development server.
 
 ```bash
 npm run dev
